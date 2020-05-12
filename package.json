@@ -1,0 +1,28 @@
+{
+  "name": "@mintpond/ref-stratum",
+  "version": "0.1.0",
+  "description": "Generic reference stratum for testing, experimentation, and demonstration.",
+  "main": "index.js",
+  "author": "JCThePants",
+  "license": "MIT",
+  "dependencies": {
+    "@mintpond/mint-bitcoin-script": "^1.0.1",
+    "@mintpond/mint-merkle": "^1.0.0",
+    "@mintpond/mint-precon": "^1.0.0",
+    "@mintpond/mint-utils": "^2.0.0"
+  },
+  "homepage": "https://github.com/MintPond/ref-stratum",
+  "bugs": {
+    "url": "https://github.com/MintPond/ref-stratum/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPond/ref-stratum.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
+  "engines": {
+    "node": ">=10.17.0"
+  }
+}
