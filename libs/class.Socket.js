@@ -3,7 +3,10 @@
 const
     EventEmitter = require('events'),
     NetSocket = require('net').Socket,
-    precon = require('@mintpond/mint-precon');
+    bos = require('@mintpond/mint-bos'),
+    BosDeserializeBuffer = require('@mintpond/mint-bos').BosDeserializeBuffer,
+    precon = require('@mintpond/mint-precon'),
+    mu = require('@mintpond/mint-utils');
 
 
 /**
@@ -29,10 +32,11 @@ class Socket extends EventEmitter {
         _._localAddress = _._socket.localAddress;
         _._localPort = _._socket.localPort;
 
-        _._socket.setEncoding('utf8');
+        _._bosErrorsArr = [];
+
         _._socket.setKeepAlive(true);
         _._socket.setNoDelay(true);
-        _._socket.on('data', _._jsonReader.bind(_));
+        _._socket.on('data', _._bosReader.bind(_));
         _._socket.on('close', _._onSocketClose.bind(_));
         _._socket.on('error', _._onSocketError.bind(_));
     }
@@ -91,7 +95,7 @@ class Socket extends EventEmitter {
     /**
      * Write raw data to the socket.
      *
-     * @param serializedData {string|Buffer} The data to write.
+     * @param serializedData {Buffer} The data to write.
      * @param originalMessage {object} The unserialized message so it can be included in event arguments.
      */
     write(serializedData, originalMessage) {
@@ -107,16 +111,17 @@ class Socket extends EventEmitter {
      * Serialize and write a stratum message to the socket.
      *
      * @param message {object} The object to write.
-     * @returns {{data:string|Buffer,message:object}} An object containing the data data written to the socket and the original message.
+     * @returns {{data:Buffer,message:object}} An object containing the data data written to the socket and the original message.
      */
     send(message) {
         precon.obj(message, 'message');
 
         const _ = this;
+        const serializedBuf = bos.serialize(message);
 
-        const jsonString = JSON.stringify(message) + '\n';
-        _.write(jsonString, message);
-        return { data: jsonString, message: message };
+        _.write(serializedBuf, message);
+
+        return { data: serializedBuf, message: message };
     }
 
 
@@ -142,44 +147,38 @@ class Socket extends EventEmitter {
     }
 
 
-    _jsonReader(dataBuffer) {
+    _bosReader(dataBuf) {
 
         const _ = this;
 
-        const dataBufferString = dataBuffer.toString();
-        _._jsonBuffer += dataBufferString;
+        if (!_._bosBuffer)
+            _._bosBuffer = new BosDeserializeBuffer(300000);
 
-        if (dataBufferString.lastIndexOf('\n') !== -1) {
+        if (!_._bosBuffer.append(dataBuf)) {
+            _.emit(Socket.EVENT_MALFORMED_MESSAGE, 'Failed to read data');
+            return;
+        }
 
-            const messages = _._jsonBuffer.split('\n');
-            const incomplete = _._jsonBuffer.slice(-1) === '\n'
-                ? ''
-                : messages.pop();
+        const messagesArr = [];
 
-            messages.forEach(strMessage => {
+        const totalRead = _._bosBuffer.deserialize(messagesArr, _._bosErrorsArr);
+        if (totalRead === undefined) {
+            _._bosBuffer.clear();
+            _.emit(Socket.EVENT_MALFORMED_MESSAGE, `BOS Failed to parse: ${_._bosErrorsArr.pop()}`);
+            return;
+        }
 
-                if (!strMessage)
-                    return;
+        if (totalRead) {
 
-                const message = Socket._parseJson(strMessage);
-                if (!message) {
-                    _.emit(Socket.EVENT_MALFORMED_MESSAGE, strMessage);
+            for (let i = 0; i < totalRead; i++) {
+                const message = messagesArr[i];
+                if (!message || !mu.isObject(message)) {
+                    _.emit(Socket.EVENT_MALFORMED_MESSAGE, 'Invalid message object');
                     return;
                 }
 
                 _.emit(Socket.EVENT_MESSAGE_IN, { message: message });
-            });
-            _._jsonBuffer = incomplete;
-        }
-    }
-
-
-    static _parseJson(json) {
-        try {
-            return JSON.parse(json);
-        }
-        catch (e) {
-            return false;
+            }
         }
     }
 }

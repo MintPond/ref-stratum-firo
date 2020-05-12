@@ -197,10 +197,10 @@ class Stratum extends EventEmitter {
      * Determine if a worker can be authorized or should be rejected.
      *
      * @param client {Client}
-     * @param callback {function(err:*,isAuthorized:boolean,message:string)}
+     * @param callback {function(err:*,isAuthorized:boolean)}
      */
     canAuthorizeWorker(client, callback) {
-        callback(null, true, '');
+        callback(null, true);
     }
 
 

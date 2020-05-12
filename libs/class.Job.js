@@ -32,7 +32,7 @@ class Job {
         _._stratum = args.stratum;
 
         _._time = mu.now();
-        _._prevBlockId = _._getPrevBlockId();
+        _._prevBlockId = _._blockTemplate.previousblockhash;
         _._height = _._blockTemplate.height;
 
         _._targetBi = _._blockTemplate.target
@@ -42,10 +42,10 @@ class Job {
         _._nDiff = algorithm.diff1 / Number(_._targetBi);
         _._pDiff = _._nDiff * algorithm.multiplier;
 
-        _._versionHex = _._blockTemplate.version;
-        _._curTimeHex = buffers.packUInt32LE(_._blockTemplate.curtime).toString('hex');
-        _._bitsHex = _._blockTemplate.bits;
-        _._prevHashHex = _._blockTemplate.previousblockhash;
+        _._versionBuf = buffers.packUInt32LE(_._blockTemplate.version);
+        _._curTimeBuf = buffers.packUInt32LE(_._blockTemplate.curtime);
+        _._bitsBuf = buffers.hexToLE(_._blockTemplate.bits);
+        _._prevHashBuf = buffers.hexToLE(_._blockTemplate.previousblockhash);
 
         _._coinbase = _._createCoinbase();
         _._merkleTree = _._createMerkleTree();
@@ -111,28 +111,28 @@ class Job {
     get merkleTree() { return this._merkleTree; }
 
     /**
-     * Get the block template version in hex.
+     * Get the block template version in LE Buffer.
      * @returns {string}
      */
-    get versionHex() { return this._versionHex; }
+    get versionBuf() { return this._versionBuf; }
 
     /**
-     * Get the block template curtime in hex.
+     * Get the block template curtime in LE Buffer.
      * @returns {string}
      */
-    get curTimeHex() { return this._curTimeHex; }
+    get curTimeBuf() { return this._curTimeBuf; }
 
     /**
-     * Get the block template bits in hex.
+     * Get the block template bits in LE Buffer.
      * @returns {string}
      */
-    get bitsHex() { return this._bitsHex; }
+    get bitsBuf() { return this._bitsBuf; }
 
     /**
-     * Get the block template previous block hash in hex.
-     * @returns {string}
+     * Get the block template previous block hash in LE Buffer.
+     * @returns {Buffer}
      */
-    get prevHashHex() { return this._prevHashHex; }
+    get prevHashBuf() { return this._prevHashBuf; }
 
     /**
      * Get the block target
@@ -155,16 +155,16 @@ class Job {
      */
     registerShare(share) {
         precon.instanceOf(share, Share, 'share');
-        precon.string(share.extraNonce1Hex, 'extraNonce1Hex');
-        precon.string(share.extraNonce2Hex, 'extraNonce2Hex');
-        precon.string(share.nTimeHex, 'nTimeHex');
-        precon.string(share.nonceHex, 'nonceHex');
+        precon.buffer(share.extraNonce1Buf, 'extraNonce1Buf');
+        precon.buffer(share.extraNonce2Buf, 'extraNonce2Buf');
+        precon.buffer(share.nTimeBuf, 'nTimeBuf');
+        precon.buffer(share.nonceBuf, 'nonceBuf');
 
         const _ = this;
-        const extraNonce1Hex = share.extraNonce1Hex;
-        const extraNonce2Hex = share.extraNonce2Hex;
-        const nTimeHex = share.nTimeHex;
-        const nonceHex = share.nonceHex;
+        const extraNonce1Hex = share.extraNonce1Buf.toString('hex');
+        const extraNonce2Hex = share.extraNonce2Buf.toString('hex');
+        const nTimeHex = share.nTimeBuf.toString('hex');
+        const nonceHex = share.nonceBuf.toString('hex');
 
         const submitId = `${nonceHex}:${nTimeHex}${extraNonce1Hex}:${extraNonce2Hex}`;
 
@@ -193,12 +193,6 @@ class Job {
             blockTemplate: _._blockTemplate,
             blockBrand: _._stratum.config.blockBrand
         });
-    }
-
-
-    _getPrevBlockId() {
-        const _ = this;
-        return buffers.leToHex(buffers.reverseDWords(Buffer.from(_._blockTemplate.previousblockhash, 'hex')));
     }
 }
 

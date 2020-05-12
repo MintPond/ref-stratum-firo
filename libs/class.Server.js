@@ -179,6 +179,7 @@ class Server extends EventEmitter {
         }
 
         let extraNonce1Hex = _._extraNonceCounter.nextHex32();
+        extraNonce1Hex = extraNonce1Hex + extraNonce1Hex; // create 8 byte extranonce
 
         const socket = new Socket(netSocket);
 

@@ -1,23 +1,25 @@
 {
-  "name": "@mintpond/ref-stratum",
+  "name": "@mintpond/ref-stratum-zcoin",
   "version": "0.1.0",
-  "description": "Generic reference stratum for testing, experimentation, and demonstration.",
+  "description": "Zcoin reference stratum for testing, experimentation, and demonstration.",
   "main": "index.js",
   "author": "JCThePants",
   "license": "MIT",
   "dependencies": {
+    "@mintpond/hasher-mtp": "^2.0.0",
+    "@mintpond/mint-bos": "^2.0.1",
     "@mintpond/mint-bitcoin-script": "^1.0.1",
     "@mintpond/mint-merkle": "^1.0.0",
     "@mintpond/mint-precon": "^1.0.0",
     "@mintpond/mint-utils": "^2.0.0"
   },
-  "homepage": "https://github.com/MintPond/ref-stratum",
+  "homepage": "https://github.com/MintPond/ref-stratum-zcoin",
   "bugs": {
-    "url": "https://github.com/MintPond/ref-stratum/issues"
+    "url": "https://github.com/MintPond/ref-stratum-zcoin/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MintPond/ref-stratum.git"
+    "url": "https://github.com/MintPond/ref-stratum-zcoin.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"

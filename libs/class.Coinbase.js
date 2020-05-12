@@ -8,7 +8,7 @@ const
     Share = require('./class.Share');
 
 const
-    EXTRANONCE_SIZE = 8,
+    EXTRANONCE_SIZE = 16,
     BUFFER_U32_ZERO = buffers.packUInt32LE(0),
     BUFFER_VAR_ONE = buffers.packVarInt(1),
     BUFFER_32_MAX = Buffer.from('FFFFFFFF', 'hex'),
@@ -72,8 +72,8 @@ class Coinbase {
         const coinbase2Buf = _.coinbase2Buf;
         return Buffer.concat([
             coinbase1Buf,
-            Buffer.from(share.extraNonce1Hex, 'hex'),
-            Buffer.from(share.extraNonce2Hex, 'hex'),
+            share.extraNonce1Buf,
+            share.extraNonce2Buf,
             coinbase2Buf
         ]);
     }
@@ -138,11 +138,46 @@ class Coinbase {
         const outputTxsArr = [];
         const blockTemplate = _._blockTemplate;
         const poolAddressScript = scripts.makeAddressScript(_._coinbaseAddress)
+        const isTestnet = _._coinbaseAddress[0] === 'T';
 
         let poolRewardSt = blockTemplate.coinbasevalue;
+
+        const feeRewardSt = Math.round(poolRewardSt * 0.0025);
+        poolRewardSt -= feeRewardSt;
+
         _._txCount = 0;
 
-        _._addTransaction(outputTxsArr, poolRewardSt, poolAddressScript, true);
+        const founder1RewardSt = 50000000;
+        const founder2RewardSt = 50000000;
+        const founder3RewardSt = 50000000;
+        const founder4RewardSt = 150000000;
+        const founder5RewardSt = 50000000;
+
+        const founder1Script = scripts.makeAddressScript(
+            isTestnet ? 'TDk19wPKYq91i18qmY6U9FeTdTxwPeSveo' : 'aCAgTPgtYcA4EysU4UKC86EQd5cTtHtCcr');
+
+        const founder2Script = scripts.makeAddressScript(
+            isTestnet ? 'TWZZcDGkNixTAMtRBqzZkkMHbq1G6vUTk5' : 'aHu897ivzmeFuLNB6956X6gyGeVNHUBRgD');
+
+        const founder3Script = scripts.makeAddressScript(
+            isTestnet ? 'TRZTFdNCKCKbLMQV8cZDkQN9Vwuuq4gDzT' : 'aQ18FBVFtnueucZKeVg4srhmzbpAeb1KoN');
+
+        const founder4Script = scripts.makeAddressScript(
+            isTestnet ? 'TG2ruj59E5b1u9G3F7HQVs6pCcVDBxrQve' : 'a1HwTdCmQV3NspP2QqCGpehoFpi8NY4Zg3');
+
+        const founder5Script = scripts.makeAddressScript(
+            isTestnet ? 'TCsTzQZKVn4fao8jDmB9zQBk9YQNEZ3XfS' : 'a1kCCGddf5pMXSipLVD9hBG2MGGVNaJ15U');
+
+        const feeScript = scripts.makeAddressScript(
+            isTestnet ? 'TC6qME2GhepR7656DgsR72pkQDmhfTDbtV' : 'aMaQErBviQDyXBPuh4cq6FBCnXhpVWiXT4');
+
+        _._addTransaction(outputTxsArr, founder1RewardSt, founder1Script);
+        _._addTransaction(outputTxsArr, founder2RewardSt, founder2Script);
+        _._addTransaction(outputTxsArr, founder3RewardSt, founder3Script);
+        _._addTransaction(outputTxsArr, founder4RewardSt, founder4Script);
+        _._addTransaction(outputTxsArr, founder5RewardSt, founder5Script);
+        _._addTransaction(outputTxsArr, feeRewardSt, feeScript);
+        _._addTransaction(outputTxsArr, poolRewardSt, poolAddressScript);
 
         const default_witness_commitment = blockTemplate.default_witness_commitment;
         if (default_witness_commitment) {

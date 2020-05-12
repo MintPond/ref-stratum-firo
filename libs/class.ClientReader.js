@@ -3,6 +3,7 @@
 const
     precon = require('@mintpond/mint-precon'),
     mu = require('@mintpond/mint-utils'),
+    buffers = require('@mintpond/mint-utils').buffers,
     Share = require('./class.Share'),
     StratumError = require('./class.StratumError');
 
@@ -184,29 +185,65 @@ class ClientReader {
         }
 
         if (!Array.isArray(message.params)) {
-            _._client.emit(Client.EVENT_MALFORMED_MESSAGE, { message: message });
+            _._client.disconnect('Malformed message: params is not an array');
             return true/*isHandled*/;
         }
 
         const workerName = message.params[0];
-        if (!workerName || !mu.isString(workerName)) {
-            _._client.emit(Client.EVENT_MALFORMED_MESSAGE, { message: message });
+        const jobIdBuf = message.params[1];
+        const extraNonce2Buf = message.params[2];
+        const nTimeBuf = message.params[3];
+        const nonceBuf = message.params[4];
+        const mtpHashRootBuf = message.params[5];
+        const mtpBlockBuf = message.params[6];
+        const mtpProofBuf = message.params[7];
+
+        if (!Buffer.isBuffer(jobIdBuf)) {
+            _._client.disconnect('Malformed message: jobIdBuf is not a Buffer');
             return true/*isHandled*/;
         }
 
-        const jobIdHex = _._hex(message.params[1]);
-        const extraNonce2Hex = _._hex(message.params[2]);
-        const nTimeHex = _._hex(message.params[3]);
-        const nonceHex = _._hex(message.params[4]);
+        if (!Buffer.isBuffer(extraNonce2Buf)) {
+            _._client.disconnect('Malformed message: extraNonce2Buf is not a Buffer');
+            return true/*isHandled*/;
+        }
+
+        if (!Buffer.isBuffer(nTimeBuf)) {
+            _._client.disconnect('Malformed message: nTimeBuf is not a Buffer');
+            return true/*isHandled*/;
+        }
+
+        if (!Buffer.isBuffer(nonceBuf)) {
+            _._client.disconnect('Malformed message: nonceBuf is not a Buffer');
+            return true/*isHandled*/;
+        }
+
+        if (!Buffer.isBuffer(mtpHashRootBuf)) {
+            _._client.disconnect('Malformed message: mtpHashRootBuf is not a Buffer');
+            return true/*isHandled*/;
+        }
+
+        if (!Buffer.isBuffer(mtpBlockBuf)) {
+            _._client.disconnect('Malformed message: mtpBlockBuf is not a Buffer');
+            return true/*isHandled*/;
+        }
+
+        if (!Buffer.isBuffer(mtpProofBuf)) {
+            _._client.disconnect('Malformed message: mtpProofBuf is not a Buffer');
+            return true/*isHandled*/;
+        }
 
         const share = new Share({
             client: _._client,
             stratum: _._stratum,
             workerName: workerName,
-            jobIdHex: jobIdHex,
-            extraNonce2Hex: extraNonce2Hex,
-            nTimeHex: nTimeHex,
-            nonceHex: nonceHex
+            jobIdHex: buffers.leToHex(jobIdBuf),
+            extraNonce2Buf: extraNonce2Buf,
+            nTimeBuf: nTimeBuf,
+            nonceBuf: nonceBuf,
+            mtpHashRootBuf: mtpHashRootBuf,
+            mtpBlockBuf: mtpBlockBuf,
+            mtpProofBuf: mtpProofBuf
         });
 
         const isValid = share.validate();
@@ -220,25 +257,6 @@ class ClientReader {
         });
 
         return true/*isHandled*/;
-    }
-
-
-    _hex(val) {
-
-        let value;
-
-        if (mu.isString(val)) {
-
-            if (val.startsWith('0x'))
-                val = val.substr(2);
-
-            value = val.toLowerCase();
-        }
-        else {
-            value = '';
-        }
-
-        return value;
     }
 }
 

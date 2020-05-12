@@ -71,7 +71,7 @@ class JobManager extends EventEmitter {
     destroy() {
         const _ = this;
         clearInterval(_._jobInterval);
-        clearInterval(_._blockInterval);
+        clearTimeout(_._blockInterval);
     }
 
 
@@ -196,8 +196,8 @@ class JobManager extends EventEmitter {
         if (!blockPollIntervalMs)
             return;
 
-        clearInterval(_._blockInterval);
-        _._blockInterval = setInterval(_._pollBlockTemplate.bind(_), blockPollIntervalMs);
+        clearTimeout(_._blockInterval);
+        _._blockInterval = setTimeout(_._pollBlockTemplate.bind(_), blockPollIntervalMs);
     }
 
 
@@ -205,12 +205,14 @@ class JobManager extends EventEmitter {
         const _ = this;
         _._getBlockTemplate((err, blockTemplate) => {
 
-            if (!blockTemplate)
-                return;
+            if (blockTemplate) {
 
-            const isNewBlock = !_.currentJob || _.currentJob.prevBlockId !== blockTemplate.previousblockhash;
-            if (isNewBlock)
-                _._processTemplate(blockTemplate);
+                const isNewBlock = !_.currentJob || _.currentJob.blockTemplate.previousblockhash !== blockTemplate.previousblockhash;
+                if (isNewBlock)
+                    _._processTemplate(blockTemplate);
+            }
+
+            _._scheduleBlockPolling();
         });
     }
 }

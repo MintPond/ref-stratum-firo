@@ -9,6 +9,13 @@ const
     StratumError = require('./class.StratumError');
 
 
+const MTP_HASH_VALUE_BUFFER = Buffer.alloc(32, 0);
+
+const MTP_VERIFY_FAILED = StratumError.custom('MTP verify failed');
+const INCORRECT_HASH_ROOT_SIZE = StratumError.custom('Incorrect size of MTP hash root');
+const INCORRECT_BLOCK_SIZE = StratumError.custom('Incorrect size of MTP block');
+
+
 class Share {
 
     /**
@@ -19,27 +26,36 @@ class Share {
      * @param args.stratum {Stratum}
      * @param args.workerName {string}
      * @param args.jobIdHex {string}
-     * @param args.extraNonce2Hex {string}
-     * @param args.nTimeHex {string}
-     * @param args.nonceHex {string}
+     * @param args.extraNonce2Buf {string}
+     * @param args.nTimeBuf {string}
+     * @param args.nonceBuf {string}
+     * @param args.mtpHashRootBuf {Buffer}
+     * @param args.mtpBlockBuf {Buffer}
+     * @param args.mtpProofBuf {Buffer}
      */
     constructor(args) {
         precon.notNull(args.client, 'client');
         precon.notNull(args.stratum, 'stratum');
         precon.string(args.workerName, 'workerName');
         precon.string(args.jobIdHex, 'jobIdHex');
-        precon.string(args.extraNonce2Hex, 'extraNonce2Hex');
-        precon.string(args.nTimeHex, 'nTimeHex');
-        precon.string(args.nonceHex, 'nonceHex');
+        precon.buffer(args.extraNonce2Buf, 'extraNonce2Buf');
+        precon.buffer(args.nTimeBuf, 'nTimeBuf');
+        precon.buffer(args.nonceBuf, 'nonceBuf');
+        precon.buffer(args.mtpHashRootBuf, 'mtpHashRootBuf');
+        precon.buffer(args.mtpBlockBuf, 'mtpBlockBuf');
+        precon.buffer(args.mtpProofBuf, 'mtpProofBuf');
 
         const _ = this;
         _._client = args.client;
         _._stratum = args.stratum;
         _._workerName = args.workerName;
         _._jobIdHex = args.jobIdHex;
-        _._extraNonce2Hex = args.extraNonce2Hex;
-        _._nTimeHex = args.nTimeHex;
-        _._nonceHex = args.nonceHex;
+        _._extraNonce2Buf = args.extraNonce2Buf;
+        _._nTimeBuf = args.nTimeBuf;
+        _._nonceBuf = args.nonceBuf;
+        _._mtpHashRootBuf = args.mtpHashRootBuf;
+        _._mtpBlockBuf = args.mtpBlockBuf;
+        _._mtpProofBuf = args.mtpProofBuf;
 
         _._stratumDiff = _._client.diff;
         _._shareDiff = 0;
@@ -93,7 +109,7 @@ class Share {
      * Get the mining address of the client that submitted the share.
      * @returns {string}
      */
-    get minerAddress() { return this._client.worker.minerAddress; }
+    get minerAddress() { return this._client.minerAddress; }
 
     /**
      * Get the share difficulty.
@@ -179,25 +195,25 @@ class Share {
      * Get share nTime as a Buffer
      * @returns {Buffer}
      */
-    get nTimeHex() { return this._nTimeHex; }
+    get nTimeBuf() { return this._nTimeBuf; }
 
     /**
      * Get share nonce as a Buffer
      * @returns {Buffer}
      */
-    get nonceHex() { return this._nonceHex; }
+    get nonceBuf() { return this._nonceBuf; }
 
     /**
      * Get client extraNonce1 as a Buffer
      * @returns {Buffer}
      */
-    get extraNonce1Hex() { return this._client.extraNonce1Hex; }
+    get extraNonce1Buf() { return buffers.hexToLE(this._client.extraNonce1Hex); }
 
     /**
      * Get share extraNonce2 as a Buffer
      * @returns {Buffer}
      */
-    get extraNonce2Hex() { return this._extraNonce2Hex; }
+    get extraNonce2Buf() { return this._extraNonce2Buf; }
 
 
     /**
@@ -241,13 +257,41 @@ class Share {
         if (_._isDuplicateShare())
             return false;
 
+        /* check MTP hash root size */
+        if (_._mtpHashRootBuf.length !== algorithm.MTP_HASH_ROOT_SIZE) {
+            _._setError(INCORRECT_HASH_ROOT_SIZE);
+            return true;
+        }
+
+        /* check MTP block size */
+        if (_._mtpBlockBuf.length !== algorithm.MTP_BLOCK_SIZE) {
+            _._setError(INCORRECT_BLOCK_SIZE);
+            return true;
+        }
+
+        /* Validate MTP proofs */
+        const mtpHeaderBuf = _._serializeMtpHeader();
+
+        const isValidProof = algorithm.verify(
+            /* header    */ mtpHeaderBuf,
+            /* nonce     */ _._nonceBuf,
+            /* hash root */ _._mtpHashRootBuf,
+            /* mtp block */ _._mtpBlockBuf,
+            /* mtp proof */ _._mtpProofBuf,
+            /* hash out  */ MTP_HASH_VALUE_BUFFER);
+
+        if (!isValidProof) {
+            _._setError(MTP_VERIFY_FAILED);
+            return true;
+        }
+
         // check valid block
-        const header = _._validateBlock();
+        const header = _._validateBlock(MTP_HASH_VALUE_BUFFER);
 
         if (_._isValidBlock) {
 
             _._blockHex = _._serializeBlock(header).toString('hex');
-            _._blockId = header.hash;
+            _._blockId = header.hash.toString('hex');
 
             console.log(`Winning nonce submitted: ${_._blockId}`);
         }
@@ -297,7 +341,7 @@ class Share {
 
     _isInvalidNonceSize() {
         const _ = this;
-        if (_._nonceHex.length !== 4) {
+        if (_._nonceBuf.length !== 4) {
             _._setError(StratumError.INCORRECT_NONCE_SIZE);
             return true;
         }
@@ -307,7 +351,7 @@ class Share {
 
     _isInvalidExtraNonce2Size() {
         const _ = this;
-        if (_._extraNonce2Hex.length !== 4) {
+        if (_._extraNonce2Buf.length !== 8) {
             _._setError(StratumError.INCORRECT_EXTRANONCE2_SIZE);
             return true;
         }
@@ -317,7 +361,7 @@ class Share {
 
     _isInvalidTimeSize() {
         const _ = this;
-        if (_._nTimeHex.length !== 4) {
+        if (_._nTimeBuf.length !== 4) {
             _._setError(StratumError.INCORRECT_TIME_SIZE);
             return true;
         }
@@ -327,7 +371,7 @@ class Share {
 
     _isInvalidTimeRange() {
         const _ = this;
-        const nTimeInt = _._nTimeHex.readUInt32LE(0);
+        const nTimeInt = _._nTimeBuf.readUInt32LE(0);
         if (nTimeInt < _._job.blockTemplate.curtime || nTimeInt > _._submitTime + 7200) {
             _._setError(StratumError.TIME_OUT_OF_RANGE);
             return true;
@@ -366,19 +410,74 @@ class Share {
     }
 
 
-    _validateBlock() {
+    _validateBlock(mtpHashValueBuf) {
         const _ = this;
 
-        const header = _._serializeHeader();
-        const headerBi = bi.fromBufferLE(header.hash);
+        const headerBi = bi.fromBufferLE(mtpHashValueBuf);
+
         _._shareDiff = algorithm.diff1 / Number(headerBi) * algorithm.multiplier;
         _._isValidBlock = _._job.targetBi >= headerBi;
 
-        return header;
+        return _._isValidBlock ? _._serializeHeader(mtpHashValueBuf) : null;
     }
 
 
-    _serializeHeader() {
+    _serializeHeader(mtpHashValueBuf) {
+        const _ = this;
+
+        const coinbaseBuf = _._job.coinbase.serialize(_);
+        const coinbaseHashBuf = buffers.sha256d(coinbaseBuf);
+
+        const merkleRootBuf = _._job.merkleTree.withFirstHash(coinbaseHashBuf);
+
+        const headerBuf = Buffer.alloc(180);
+        let position = 0;
+
+        /* version    */
+        _._job.versionBuf.copy(headerBuf, position);
+        position += 4;
+
+        /* prev block */
+        _._job.prevHashBuf.copy(headerBuf, position);
+        position += 32;
+
+        /* merkle     */
+        merkleRootBuf.copy(headerBuf, position);
+        position += 32;
+
+        /* time       */
+        _._nTimeBuf.copy(headerBuf, position);
+        position += 4;
+
+        /* bits       */
+        _._job.bitsBuf.copy(headerBuf, position);
+        position += 4;
+
+        /* nonce      */
+        _._nonceBuf.copy(headerBuf, position);
+        position += 4;
+
+        /* MTP version */
+        headerBuf.writeUInt32BE(algorithm.MTP_VERSION, position);
+        position += 4;
+
+        /* MTP hash value */
+        mtpHashValueBuf.copy(headerBuf, position);
+        /* +32 bytes */
+
+        /* +32 bytes - MTP reserved[0] */
+        /* +32 bytes - MTP reserved[1] */
+
+        return {
+            hash: buffers.sha256d(headerBuf),
+            buffer: headerBuf,
+            coinbaseBuf: coinbaseBuf
+        };
+    }
+
+
+    _serializeMtpHeader() {
+
         const _ = this;
 
         const coinbaseBuf = _._job.coinbase.serialize(_);
@@ -389,35 +488,30 @@ class Share {
         const headerBuf = Buffer.alloc(80);
         let position = 0;
 
-        /* version    */
-        buffers.hexToLE(_._job.versionHex).copy(headerBuf, position);
+        /* version     */
+        _._job.versionBuf.copy(headerBuf, position);
         position += 4;
 
-        /* prev block */
-        buffers.hexToLE(_._job.prevHashHex).copy(headerBuf, position);
+        /* prev block  */
+        _._job.prevHashBuf.copy(headerBuf, position);
         position += 32;
 
-        /* merkle     */
+        /* merkle      */
         merkleRootBuf.copy(headerBuf, position);
         position += 32;
 
-        /* time       */
-        buffers.hexToLE(_._nTimeHex).copy(headerBuf, position);
+        /* time        */
+        _._nTimeBuf.copy(headerBuf, position);
         position += 4;
 
-        /* bits       */
-        buffers.hexToLE(_._job.bitsHex).copy(headerBuf, position);
+        /* bits        */
+        _._job.bitsBuf.copy(headerBuf, position);
         position += 4;
 
-        /* nonce      */
-        buffers.hexToLE(_._nonceHex).copy(headerBuf, position);
-        //position += 4;
+        /* mtp version */
+        headerBuf.writeUInt32BE(algorithm.MTP_VERSION, position);
 
-        return {
-            hash: algorithm.hash(headerBuf),
-            buffer: headerBuf,
-            coinbaseBuf: coinbaseBuf
-        };
+        return headerBuf;
     }
 
 
@@ -426,6 +520,9 @@ class Share {
 
         return Buffer.concat([
             /* header           */ header.buffer,
+            /* mtp hash root    */ _._mtpHashRootBuf,
+            /* mtp block        */ _._mtpBlockBuf,
+            /* mtp proof        */ _._mtpProofBuf,
             /* transaction len  */ buffers.packVarInt(_._job.blockTemplate.transactions.length + 1/* +coinbase */),
             /* coinbase tx      */ header.coinbaseBuf,
             /* transactions     */ _._job.txDataBuf
