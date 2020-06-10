@@ -154,7 +154,7 @@ class Stratum extends EventEmitter {
         _._jobManager.init((err) => {
 
             if (err)
-                throw new Error(`Failed to start stratum server. Failed to get first job: ${err}`);
+                throw new Error(`Failed to start stratum server. Failed to get first job: ${JSON.stringify(err)}`);
 
             _._server.start(() => {
                 _._jobManager.on(JobManager.EVENT_NEXT_JOB, _._onNextJob.bind(_));
@@ -297,7 +297,7 @@ class Stratum extends EventEmitter {
             params: [share.blockId],
             callback: (err, block) => {
                 if (err) {
-                    console.error(`Failed to verify block submission: ${err}`);
+                    console.error(`Failed to verify block submission: ${JSON.stringify(err)}`);
                     callback(err, {
                         isAccepted: false
                     });
