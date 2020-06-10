@@ -12,7 +12,7 @@ const
     BUFFER_U32_ZERO = buffers.packUInt32LE(0),
     BUFFER_VAR_ONE = buffers.packVarInt(1),
     BUFFER_32_MAX = Buffer.from('FFFFFFFF', 'hex'),
-    BUFFER_TX_VERSION_1 = buffers.packUInt32LE(1),
+    BUFFER_TX_VERSION_3 = Buffer.from('03000500', 'hex'),
     BUFFER_INPUT_HASH = buffers.packUInt256LE(0);
 
 
@@ -94,7 +94,7 @@ class Coinbase {
         // First part of coinbase which is split at the extra nonce values
         return Buffer.concat([
 
-            /* version       */ BUFFER_TX_VERSION_1,
+            /* version       */ BUFFER_TX_VERSION_3,
 
             // Tx Inputs
             /* input count   */ BUFFER_VAR_ONE,
@@ -127,7 +127,8 @@ class Coinbase {
             /* output count   */ buffers.packVarInt(_._txCount),
             /* outputs        */ outputTxBuf,
 
-            /* lock time      */ BUFFER_U32_ZERO
+            /* lock time      */ BUFFER_U32_ZERO,
+            /* extra_payload  */ _._getExtraPayloadBuf()
         ]);
     }
 
@@ -179,10 +180,10 @@ class Coinbase {
         _._addTransaction(outputTxsArr, feeRewardSt, feeScript);
         _._addTransaction(outputTxsArr, poolRewardSt, poolAddressScript);
 
-        // Znodes
-        const znode = blockTemplate.znode;
-        if (znode && znode.payee)
-            _._addTransaction(outputTxsArr, znode.amount, scripts.makeAddressScript(znode.payee));
+        // Evo Znodes
+        blockTemplate.znode.forEach(entry => {
+            _._addTransaction(outputTxsArr, entry.amount, scripts.makeAddressScript(entry.payee));
+        });
 
         return Buffer.concat(outputTxsArr);
     }
@@ -196,6 +197,19 @@ class Coinbase {
             scriptBuff
         );
         _._txCount++;
+    }
+
+
+    _getExtraPayloadBuf() {
+
+        const _ = this;
+        const payload = Buffer.from(_._blockTemplate.coinbase_payload, 'hex');
+        const cbPayload = Buffer.alloc(1 + payload.length);
+
+        cbPayload.writeUInt8(payload.length, 0);
+        payload.copy(cbPayload, 1);
+
+        return cbPayload;
     }
 }
 
