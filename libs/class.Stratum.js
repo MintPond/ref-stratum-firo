@@ -220,7 +220,7 @@ class Stratum extends EventEmitter {
 
             _._submitBlock(share, (err, result) => {
 
-                if (err || !result.isAccepted) {
+                if (err || (result && !result.isAccepted)) {
                     _._emitShare(share);
                     return;
                 }
@@ -228,7 +228,7 @@ class Stratum extends EventEmitter {
                 _.jobManager.updateJob(() => {
                     _._checkBlockAccepted(share, (err, result) => {
 
-                        if (err || !result.isAccepted) {
+                        if (err || (result && !result.isAccepted)) {
                             share.isValidBlock = false
                         }
                         else {
