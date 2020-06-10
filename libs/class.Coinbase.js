@@ -180,8 +180,9 @@ class Coinbase {
         _._addTransaction(outputTxsArr, poolRewardSt, poolAddressScript);
 
         // Znodes
-        if (blockTemplate.znode)
-            _._addTransaction(outputTxsArr, blockTemplate.znode.amount, scripts.makeAddressScript(blockTemplate.znode.payee));
+        const znode = blockTemplate.znode;
+        if (znode && znode.payee)
+            _._addTransaction(outputTxsArr, znode.amount, scripts.makeAddressScript(znode.payee));
 
         return Buffer.concat(outputTxsArr);
     }
