@@ -278,10 +278,10 @@ class Stratum extends EventEmitter {
             params: [share.blockHex],
             callback: (err, result) => {
                 if (err) {
-                    console.error(`Error while submitting block to daemon: ${err}`);
+                    console.error(`Error while submitting block to daemon: ${JSON.stringify(err)}`);
                 }
-                else if (!result.isAccepted) {
-                    console.error(`Daemon rejected a supposedly valid block: ${result}`)
+                else if (result && !result.isAccepted) {
+                    console.error(`Daemon rejected a supposedly valid block: ${JSON.stringify(result)}`)
                 }
                 callback(err, result);
             }
