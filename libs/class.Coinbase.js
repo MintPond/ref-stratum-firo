@@ -179,13 +179,9 @@ class Coinbase {
         _._addTransaction(outputTxsArr, feeRewardSt, feeScript);
         _._addTransaction(outputTxsArr, poolRewardSt, poolAddressScript);
 
-        const default_witness_commitment = blockTemplate.default_witness_commitment;
-        if (default_witness_commitment) {
-
-            const witnessCommitmentBuf = Buffer.from(default_witness_commitment, 'hex');
-
-            _._addTransaction(outputTxsArr, 0, witnessCommitmentBuf);
-        }
+        // Znodes
+        if (blockTemplate.znode)
+            _._addTransaction(outputTxsArr, blockTemplate.znode.amount, scripts.makeAddressScript(blockTemplate.znode.payee));
 
         return Buffer.concat(outputTxsArr);
     }
