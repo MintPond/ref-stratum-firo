@@ -41,3 +41,16 @@ stratum.on(Stratum.EVENT_SHARE_SUBMITTED, ev => {
         console.log(`Valid share submitted by ${ev.share.client.workerName} ${ev.share.error.message}`)
     }
 });
+
+// Make sure Error can be JSON serialized
+if (!Error.prototype.toJSON) {
+    Error.prototype.toJSON = function () {
+        const jsonObj = {};
+
+        Object.getOwnPropertyNames(this).forEach(key => {
+            jsonObj[key] = this[key];
+        }, this);
+
+        return jsonObj;
+    }
+}
