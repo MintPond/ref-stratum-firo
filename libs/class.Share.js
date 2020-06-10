@@ -469,7 +469,7 @@ class Share {
         /* +32 bytes - MTP reserved[1] */
 
         return {
-            hash: buffers.sha256d(headerBuf),
+            hash: buffers.reverseBytes(buffers.sha256d(headerBuf)),
             buffer: headerBuf,
             coinbaseBuf: coinbaseBuf
         };
