@@ -38,7 +38,7 @@ class Coinbase {
 
         _._coinbase1 = null;
         _._coinbase2 = null;
-        _._txCount = 0;
+        _._outputCount = 0;
         _._time = mu.now();
 
         _._blockBrandBuf = scripts.serializeString(_._blockBrand)
@@ -114,7 +114,7 @@ class Coinbase {
          scriptSig). Miners send us unique extranonces that we use to join the two parts in attempt to create
          a valid share and/or block.
          */
-        const outputTxBuf = _._createOutputTxsBuf();
+        const outputsBuf = _._createOutputsBuf();
 
         // Second part of coinbase which is split at the extra nonce values
         return Buffer.concat([
@@ -124,8 +124,8 @@ class Coinbase {
             /* input sequence */ BUFFER_32_MAX,
 
             // Tx Outputs
-            /* output count   */ buffers.packVarInt(_._txCount),
-            /* outputs        */ outputTxBuf,
+            /* output count   */ buffers.packVarInt(_._outputCount),
+            /* outputs        */ outputsBuf,
 
             /* lock time      */ BUFFER_U32_ZERO,
             /* extra_payload  */ _._getExtraPayloadBuf()
@@ -133,10 +133,10 @@ class Coinbase {
     }
 
 
-    _createOutputTxsBuf() {
+    _createOutputsBuf() {
 
         const _ = this;
-        const outputTxsArr = [];
+        const outputsArr = [];
         const blockTemplate = _._blockTemplate;
         const poolAddressScript = scripts.makeAddressScript(_._coinbaseAddress)
         const isTestnet = _._coinbaseAddress[0] === 'T';
@@ -146,7 +146,7 @@ class Coinbase {
         const feeRewardSt = Math.round(poolRewardSt * 0.0025);
         poolRewardSt -= feeRewardSt;
 
-        _._txCount = 0;
+        _._outputCount = 0;
 
         const founder1RewardSt = 50000000;
         const founder2RewardSt = 50000000;
@@ -172,31 +172,31 @@ class Coinbase {
         const feeScript = scripts.makeAddressScript(
             isTestnet ? 'TC6qME2GhepR7656DgsR72pkQDmhfTDbtV' : 'aMaQErBviQDyXBPuh4cq6FBCnXhpVWiXT4');
 
-        _._addTransaction(outputTxsArr, founder1RewardSt, founder1Script);
-        _._addTransaction(outputTxsArr, founder2RewardSt, founder2Script);
-        _._addTransaction(outputTxsArr, founder3RewardSt, founder3Script);
-        _._addTransaction(outputTxsArr, founder4RewardSt, founder4Script);
-        _._addTransaction(outputTxsArr, founder5RewardSt, founder5Script);
-        _._addTransaction(outputTxsArr, feeRewardSt, feeScript);
-        _._addTransaction(outputTxsArr, poolRewardSt, poolAddressScript);
+        _._addOutput(outputsArr, founder1RewardSt, founder1Script);
+        _._addOutput(outputsArr, founder2RewardSt, founder2Script);
+        _._addOutput(outputsArr, founder3RewardSt, founder3Script);
+        _._addOutput(outputsArr, founder4RewardSt, founder4Script);
+        _._addOutput(outputsArr, founder5RewardSt, founder5Script);
+        _._addOutput(outputsArr, feeRewardSt, feeScript);
+        _._addOutput(outputsArr, poolRewardSt, poolAddressScript);
 
         // Evo Znodes
         blockTemplate.znode.forEach(entry => {
-            _._addTransaction(outputTxsArr, entry.amount, scripts.makeAddressScript(entry.payee));
+            _._addOutput(outputsArr, entry.amount, scripts.makeAddressScript(entry.payee));
         });
 
-        return Buffer.concat(outputTxsArr);
+        return Buffer.concat(outputsArr);
     }
 
 
-    _addTransaction(txOutputBuffersArr, rewardSt, scriptBuff) {
+    _addOutput(outputsBufArr, rewardSt, scriptBuff) {
         const _ = this;
-        txOutputBuffersArr.push(
+        outputsBufArr.push(
             buffers.packUInt64LE(rewardSt),
             buffers.packVarInt(scriptBuff.length),
             scriptBuff
         );
-        _._txCount++;
+        _._outputCount++;
     }
 
 
