@@ -1,6 +1,6 @@
 {
   "name": "@mintpond/ref-stratum-zcoin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Zcoin reference stratum for testing, experimentation, and demonstration.",
   "main": "index.js",
   "author": "JCThePants",
