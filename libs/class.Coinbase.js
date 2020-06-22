@@ -180,10 +180,17 @@ class Coinbase {
         _._addOutput(outputsArr, feeRewardSt, feeScript);
         _._addOutput(outputsArr, poolRewardSt, poolAddressScript);
 
-        // Evo Znodes
-        blockTemplate.znode.forEach(entry => {
-            _._addOutput(outputsArr, entry.amount, scripts.makeAddressScript(entry.payee));
-        });
+        const znode = blockTemplate.znode;
+        if (Array.isArray(znode)) {
+            // Evo Znodes
+            znode.forEach(entry => {
+                _._addOutput(outputsArr, entry.amount, scripts.makeAddressScript(entry.payee));
+            });
+        }
+        else if (znode && znode.payee) {
+            // Znodes
+            _._addOutput(outputsArr, znode.amount, scripts.makeAddressScript(znode.payee));
+        }
 
         return Buffer.concat(outputsArr);
     }
