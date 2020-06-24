@@ -7,8 +7,23 @@ demonstration purposes. It is not intended for production use.
 This project has been developed and tested on [Node v10](https://nodejs.org/) and [Ubuntu 16.04](http://releases.ubuntu.com/16.04/)
 
 ## Install ##
+
+__NodeJS v10 (Ubuntu)__
+```bash
+# Optional: uninstall current version
+sudo apt-get remove node
+sudo apt-get remove nodejs
+
+# Install version 10.x
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install nodejs -y
+```
+
 __Dependencies__
 ```bash
+# (ubuntu) build essentials required to compile MTP verification
+sudo apt-get install build-essentials
+
 # Dependencies may require that you have a Github personal access token to install.
 npm config set @mintpond:registry https://npm.pkg.github.com/mintpond
 npm config set //npm.pkg.github.com/:_authToken <PERSONAL_ACCESS_TOKEN>
@@ -26,7 +41,6 @@ npm install
 
 __Install in a Project__
 ```bash
-
 npm config set @mintpond:registry https://npm.pkg.github.com/mintpond
 npm config set //npm.pkg.github.com/:_authToken <PERSONAL_ACCESS_TOKEN>
 
