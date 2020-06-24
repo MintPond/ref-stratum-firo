@@ -27,6 +27,14 @@ class ClientWriter {
     }
 
 
+    /**
+     * Reply to a message.
+     *
+     * @param args
+     * @param args.replyId {number}
+     * @param [args.result] {boolean}
+     * @param [args.error] {StratumError}
+     */
     reply(args) {
         precon.integer(args.replyId, 'replyId');
         precon.opt_boolean(args.result, 'result');
@@ -46,6 +54,12 @@ class ClientWriter {
     }
 
 
+    /**
+     * Reply to a mining.subscribe message.
+     *
+     * @param args
+     * @param args.replyId {number}
+     */
     replySubscribe(args) {
         precon.integer(args.replyId, 'replyId');
 
@@ -63,6 +77,14 @@ class ClientWriter {
     }
 
 
+    /**
+     * Send a mining.notify message.
+     *
+     * @param args
+     * @param args.job {Job}
+     * @param args.cleanJobs {boolean}
+     * @param args.diff {number}
+     */
     miningNotify(args) {
         precon.instanceOf(args.job, Job, 'job');
         precon.boolean(args.cleanJobs, 'cleanJobs');

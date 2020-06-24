@@ -109,11 +109,6 @@ class Coinbase {
 
     _createCoinbase2() {
         const _ = this;
-        /*
-         The generation transaction must be split at the extranonce (which is located in the transaction input
-         scriptSig). Miners send us unique extranonces that we use to join the two parts in attempt to create
-         a valid share and/or block.
-         */
         const outputsBuf = _._createOutputsBuf();
 
         // Second part of coinbase which is split at the extra nonce values

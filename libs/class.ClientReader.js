@@ -30,7 +30,6 @@ class ClientReader {
     }
 
 
-    /* Override */
     handleMessage(message) {
         precon.notNull(message, 'message');
 
