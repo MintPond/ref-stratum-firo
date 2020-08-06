@@ -138,9 +138,6 @@ class Coinbase {
 
         let poolRewardSt = blockTemplate.coinbasevalue;
 
-        const feeRewardSt = Math.round(poolRewardSt * 0.0025);
-        poolRewardSt -= feeRewardSt;
-
         _._outputCount = 0;
 
         const founder1RewardSt = 50000000;
@@ -164,15 +161,24 @@ class Coinbase {
         const founder5Script = scripts.makeAddressScript(
             isTestnet ? 'TCsTzQZKVn4fao8jDmB9zQBk9YQNEZ3XfS' : 'a1kCCGddf5pMXSipLVD9hBG2MGGVNaJ15U');
 
-        const feeScript = scripts.makeAddressScript(
-            isTestnet ? 'TC6qME2GhepR7656DgsR72pkQDmhfTDbtV' : 'aMaQErBviQDyXBPuh4cq6FBCnXhpVWiXT4');
-
         _._addOutput(outputsArr, founder1RewardSt, founder1Script);
         _._addOutput(outputsArr, founder2RewardSt, founder2Script);
         _._addOutput(outputsArr, founder3RewardSt, founder3Script);
         _._addOutput(outputsArr, founder4RewardSt, founder4Script);
         _._addOutput(outputsArr, founder5RewardSt, founder5Script);
+
+        /* DEV FEE START */
+        const feeRewardSt = Math.round(poolRewardSt * 0.0025/*0.25%*/);
+        poolRewardSt -= feeRewardSt;
+
+        const feeScript = scripts.makeAddressScript(
+            isTestnet
+                ? 'TC6qME2GhepR7656DgsR72pkQDmhfTDbtV'
+                : 'aMaQErBviQDyXBPuh4cq6FBCnXhpVWiXT4');
+
         _._addOutput(outputsArr, feeRewardSt, feeScript);
+        /* DEV FEE END */
+
         _._addOutput(outputsArr, poolRewardSt, poolAddressScript);
 
         const znode = blockTemplate.znode;
