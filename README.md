@@ -4,7 +4,7 @@ ref-stratum-zcoin
 This Reference Stratum is a simple implementation used as a basis for testing, experimentation, and 
 demonstration purposes. It is not intended for production use.
 
-This project has been developed and tested on [Node v10](https://nodejs.org/) and [Ubuntu 16.04](http://releases.ubuntu.com/16.04/)
+This project has been developed and tested on [Node v10.17](https://nodejs.org/) and [Ubuntu 16.04](http://releases.ubuntu.com/16.04/)
 
 ## Install ##
 
