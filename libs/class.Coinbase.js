@@ -182,16 +182,11 @@ class Coinbase {
         _._addOutput(outputsArr, poolRewardSt, poolAddressScript);
 
         const znode = blockTemplate.znode;
-        if (Array.isArray(znode)) {
-            // Evo Znodes
-            znode.forEach(entry => {
-                _._addOutput(outputsArr, entry.amount, scripts.makeAddressScript(entry.payee));
-            });
-        }
-        else if (znode && znode.payee) {
-            // Znodes
-            _._addOutput(outputsArr, znode.amount, scripts.makeAddressScript(znode.payee));
-        }
+
+        // Evo Znodes
+        znode.forEach(entry => {
+            _._addOutput(outputsArr, entry.amount, scripts.makeAddressScript(entry.payee));
+        });
 
         return Buffer.concat(outputsArr);
     }
