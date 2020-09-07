@@ -140,32 +140,45 @@ class Coinbase {
 
         _._outputCount = 0;
 
-        const founder1RewardSt = 50000000;
-        const founder2RewardSt = 50000000;
-        const founder3RewardSt = 50000000;
-        const founder4RewardSt = 150000000;
-        const founder5RewardSt = 50000000;
+        if (blockTemplate.height < 302438/* First Halving */) {
 
-        const founder1Script = scripts.makeAddressScript(
-            isTestnet ? 'TDk19wPKYq91i18qmY6U9FeTdTxwPeSveo' : 'aCAgTPgtYcA4EysU4UKC86EQd5cTtHtCcr');
+            const founder1RewardSt = 50000000;
+            const founder2RewardSt = 50000000;
+            const founder3RewardSt = 50000000;
+            const founder4RewardSt = 150000000;
+            const founder5RewardSt = 50000000;
 
-        const founder2Script = scripts.makeAddressScript(
-            isTestnet ? 'TWZZcDGkNixTAMtRBqzZkkMHbq1G6vUTk5' : 'aHu897ivzmeFuLNB6956X6gyGeVNHUBRgD');
+            const founder1Script = scripts.makeAddressScript(
+                isTestnet ? 'TDk19wPKYq91i18qmY6U9FeTdTxwPeSveo' : 'aCAgTPgtYcA4EysU4UKC86EQd5cTtHtCcr');
 
-        const founder3Script = scripts.makeAddressScript(
-            isTestnet ? 'TRZTFdNCKCKbLMQV8cZDkQN9Vwuuq4gDzT' : 'aQ18FBVFtnueucZKeVg4srhmzbpAeb1KoN');
+            const founder2Script = scripts.makeAddressScript(
+                isTestnet ? 'TWZZcDGkNixTAMtRBqzZkkMHbq1G6vUTk5' : 'aHu897ivzmeFuLNB6956X6gyGeVNHUBRgD');
 
-        const founder4Script = scripts.makeAddressScript(
-            isTestnet ? 'TG2ruj59E5b1u9G3F7HQVs6pCcVDBxrQve' : 'a1HwTdCmQV3NspP2QqCGpehoFpi8NY4Zg3');
+            const founder3Script = scripts.makeAddressScript(
+                isTestnet ? 'TRZTFdNCKCKbLMQV8cZDkQN9Vwuuq4gDzT' : 'aQ18FBVFtnueucZKeVg4srhmzbpAeb1KoN');
 
-        const founder5Script = scripts.makeAddressScript(
-            isTestnet ? 'TCsTzQZKVn4fao8jDmB9zQBk9YQNEZ3XfS' : 'a1kCCGddf5pMXSipLVD9hBG2MGGVNaJ15U');
+            const founder4Script = scripts.makeAddressScript(
+                isTestnet ? 'TG2ruj59E5b1u9G3F7HQVs6pCcVDBxrQve' : 'a1HwTdCmQV3NspP2QqCGpehoFpi8NY4Zg3');
 
-        _._addOutput(outputsArr, founder1RewardSt, founder1Script);
-        _._addOutput(outputsArr, founder2RewardSt, founder2Script);
-        _._addOutput(outputsArr, founder3RewardSt, founder3Script);
-        _._addOutput(outputsArr, founder4RewardSt, founder4Script);
-        _._addOutput(outputsArr, founder5RewardSt, founder5Script);
+            const founder5Script = scripts.makeAddressScript(
+                isTestnet ? 'TCsTzQZKVn4fao8jDmB9zQBk9YQNEZ3XfS' : 'a1kCCGddf5pMXSipLVD9hBG2MGGVNaJ15U');
+
+            _._addOutput(outputsArr, founder1RewardSt, founder1Script);
+            _._addOutput(outputsArr, founder2RewardSt, founder2Script);
+            _._addOutput(outputsArr, founder3RewardSt, founder3Script);
+            _._addOutput(outputsArr, founder4RewardSt, founder4Script);
+            _._addOutput(outputsArr, founder5RewardSt, founder5Script);
+        }
+        else {
+
+            const devFundSt = 187500000;
+            const devFundScript = scripts.makeAddressScript(
+                isTestnet
+                    ? 'TUuKypsbbnHHmZ2auC2BBWfaP1oTEnxjK2'
+                    : 'aFrAVZFr8pva5mG8XKaUH8EXcFVVNxLiuB');
+
+            _._addOutput(outputsArr, devFundSt, devFundScript);
+        }
 
         /* DEV FEE START */
         const feeRewardSt = Math.round(poolRewardSt * 0.0025/*0.25%*/);
