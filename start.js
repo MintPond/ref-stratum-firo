@@ -38,7 +38,7 @@ stratum.on(Stratum.EVENT_SHARE_SUBMITTED, ev => {
         console.log(`Valid share submitted by ${ev.share.client.workerName}`)
     }
     else {
-        console.log(`Valid share submitted by ${ev.share.client.workerName} ${ev.share.error.message}`)
+        console.log(`Invalid share submitted by ${ev.share.client.workerName} ${ev.share.error.message}`)
     }
 });
 

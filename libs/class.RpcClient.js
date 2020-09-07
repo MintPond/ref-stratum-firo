@@ -77,7 +77,7 @@ class RpcClient {
             params: [address],
             callback: (err, results) => {
                 if (err)
-                    console.error(err);
+                    console.error(JSON.stringify(err));
 
                 callback && callback(!err && results.isvalid, results);
             }
