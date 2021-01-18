@@ -140,7 +140,9 @@ class Coinbase {
 
         _._outputCount = 0;
 
-        if (blockTemplate.height < 302438/* First Halving */) {
+        const firstHalvingHeight = isTestnet ? 12000 : 302438;
+
+        if (blockTemplate.height < firstHalvingHeight) {
 
             const founder1RewardSt = 50000000;
             const founder2RewardSt = 50000000;
