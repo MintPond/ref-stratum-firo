@@ -1,5 +1,5 @@
-ref-stratum-zcoin
-=================
+ref-stratum-firo
+================
 
 This Reference Stratum is a simple implementation used as a basis for testing, experimentation, and 
 demonstration purposes. It is not intended for production use.
@@ -32,10 +32,10 @@ npm config set //npm.pkg.github.com/:_authToken <PERSONAL_ACCESS_TOKEN>
 
 __Download from Github__
 ```bash
-git clone https://github.com/MintPond/ref-stratum-zcoin
+git clone https://github.com/MintPond/ref-stratum-firo
 
 # install
-cd ref-stratum-zcoin
+cd ref-stratum-firo
 npm install
 ```
 
@@ -44,13 +44,13 @@ __Install in a Project__
 npm config set @mintpond:registry https://npm.pkg.github.com/mintpond
 npm config set //npm.pkg.github.com/:_authToken <PERSONAL_ACCESS_TOKEN>
 
-npm install @mintpond/ref-stratum-zcoin --save
+npm install @mintpond/ref-stratum-firo --save
 ```
 
 ## Usage ##
 The stratum can be used as a module in a pool:
 ```javascript
-const Stratum = require('@mintpond/ref-stratum-zcoin').Stratum;
+const Stratum = require('@mintpond/ref-stratum-firo').Stratum;
 
 class MyStratum extends Stratum {
     /* Override */
@@ -76,10 +76,10 @@ const stratum = new MyStratum({
         diff: 1024    // stratum difficulty
     },
     rpc: {
-        host: '172.16.3.102', // Zcoin daemon RPC host
-        port: 17001,          // Zcoin daemon RPC port
-        user: 'rpcuser',      // Zcoin daemon RPC user
-        password: "x"         // Zcoin daemon RPC password
+        host: '172.16.3.102', // Firo daemon RPC host
+        port: 17001,          // Firo daemon RPC port
+        user: 'rpcuser',      // Firo daemon RPC user
+        password: "x"         // Firo daemon RPC password
     },
     jobUpdateInterval: 55,    // Broadcast job updates every n seconds
     blockPollIntervalMs: 250  // Check for new blocks every n milliseconds
@@ -111,5 +111,5 @@ running it.
 
 
 ## Resources ##
-- [Zcoin](https://zcoin.io/) - The first cryptocurrency to implement the Merkle Tree Proof POW algorithm.
-- [MintPond Mining Pool](https://mintpond.com) - Zcoin mining pool.
+- [Firo](https://firo.org/) - Firo official website.
+- [MintPond Mining Pool](https://mintpond.com) - Firo mining pool.

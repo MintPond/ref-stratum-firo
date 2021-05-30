@@ -1,7 +1,7 @@
 {
-  "name": "@mintpond/ref-stratum-zcoin",
+  "name": "@mintpond/ref-stratum-firo",
   "version": "0.4.1",
-  "description": "Zcoin reference stratum for testing, experimentation, and demonstration.",
+  "description": "Firo reference stratum for testing, experimentation, and demonstration.",
   "main": "index.js",
   "author": "JCThePants",
   "license": "MIT",
@@ -13,13 +13,13 @@
     "@mintpond/mint-precon": "^1.0.0",
     "@mintpond/mint-utils": "^2.0.0"
   },
-  "homepage": "https://github.com/MintPond/ref-stratum-zcoin",
+  "homepage": "https://github.com/MintPond/ref-stratum-firo",
   "bugs": {
-    "url": "https://github.com/MintPond/ref-stratum-zcoin/issues"
+    "url": "https://github.com/MintPond/ref-stratum-firo/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/MintPond/ref-stratum-zcoin.git"
+    "url": "https://github.com/MintPond/ref-stratum-firo.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
