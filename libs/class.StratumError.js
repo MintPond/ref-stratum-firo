@@ -24,24 +24,6 @@ class StratumError {
 
 
     /**
-     * Incorrect ExtraNonce2 byte length.
-     * @returns {StratumError}
-     */
-    static get INCORRECT_EXTRANONCE2_SIZE() { return INCORRECT_EXTRANONCE2_SIZE }
-
-    /**
-     * Incorrect nTime byte length.
-     * @returns {StratumError}
-     */
-    static get INCORRECT_TIME_SIZE() { return INCORRECT_TIME_SIZE }
-
-    /**
-     * nTime value out of acceptable range.
-     * @returns {StratumError}
-     */
-    static get TIME_OUT_OF_RANGE() { return TIME_OUT_OF_RANGE }
-
-    /**
      * Incorrect nonce byte length.
      * @returns {StratumError}
      */
@@ -76,6 +58,30 @@ class StratumError {
      * @returns {StratumError}
      */
     static get NOT_SUBSCRIBED() { return NOT_SUBSCRIBED }
+
+    /**
+     * ProgPow share verification failed.
+     * @returns {StratumError}
+     */
+    static get PROGPOW_VERIFY_FAILED() { return PROGPOW_VERIFY_FAILED }
+
+    /**
+     * ProgPow header hash size is incorrect.
+     * @returns {StratumError}
+     */
+    static get PROGPOW_INCORRECT_HEADER_HASH_SIZE() { return PROGPOW_INCORRECT_HEADER_HASH_SIZE }
+
+    /**
+     * ProgPow mix hash size is incorrect.
+     * @returns {StratumError}
+     */
+    static get PROGPOW_INCORRECT_MIX_HASH_SIZE() { return PROGPOW_INCORRECT_MIX_HASH_SIZE }
+
+    /**
+     * ProgPow header hash does not match calculated hash.
+     * @returns {StratumError}
+     */
+    static get PROGPOW_HEADER_HASH_MISMATCH() { return PROGPOW_HEADER_HASH_MISMATCH }
 
 
     /**
@@ -117,14 +123,15 @@ class StratumError {
     }
 }
 
-const INCORRECT_EXTRANONCE2_SIZE = new StratumError(StratumErrorCode.OTHER, 'Incorrect size of extranonce2');
-const INCORRECT_TIME_SIZE = new StratumError(StratumErrorCode.OTHER, 'Incorrect size of ntime');
-const TIME_OUT_OF_RANGE = new StratumError(StratumErrorCode.OTHER, 'ntime out of range');
 const INCORRECT_NONCE_SIZE = new StratumError(StratumErrorCode.OTHER, 'Incorrect size of nonce');
 const STALE_SHARE = new StratumError(StratumErrorCode.STALE, 'Stale share - Job not found');
 const DUPLICATE_SHARE = new StratumError(StratumErrorCode.DUPLICATE, 'Duplicate share');
 const LOW_DIFFICULTY = new StratumError(StratumErrorCode.LOW_DIFFICULTY, 'Low difficulty');
 const UNAUTHORIZED_WORKER = new StratumError(StratumErrorCode.UNAUTHORIZED_WORKER, 'Unauthorized worker');
 const NOT_SUBSCRIBED = new StratumError(StratumErrorCode.NOT_SUBSCRIBED, 'Not subscribed');
+const PROGPOW_VERIFY_FAILED = new StratumError(StratumErrorCode.OTHER, 'ProgPOW verify failed');
+const PROGPOW_INCORRECT_HEADER_HASH_SIZE = new StratumError(StratumErrorCode.OTHER, 'ProgPOW incorrect header hash size');
+const PROGPOW_INCORRECT_MIX_HASH_SIZE = new StratumError(StratumErrorCode.OTHER, 'ProgPOW incorrect mix hash size');
+const PROGPOW_HEADER_HASH_MISMATCH = new StratumError(StratumErrorCode.OTHER, 'ProgPOW header hash mismatch');
 
 module.exports = StratumError;

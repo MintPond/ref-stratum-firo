@@ -4,10 +4,9 @@ const
     EventEmitter = require('events'),
     net = require('net'),
     precon = require('@mintpond/mint-precon'),
+    JsonSocket = require('@mintpond/mint-socket').JsonSocket,
     Counter = require('@mintpond/mint-utils').Counter,
-    Stratum = require('./class.Stratum'),
-    Client = require('./class.Client'),
-    Socket = require('./class.Socket');
+    Client = require('./class.Client');
 
 
 class Server extends EventEmitter {
@@ -179,9 +178,10 @@ class Server extends EventEmitter {
         }
 
         let extraNonce1Hex = _._extraNonceCounter.nextHex32();
-        extraNonce1Hex = extraNonce1Hex + extraNonce1Hex; // create 8 byte extranonce
 
-        const socket = new Socket(netSocket);
+        const socket = new JsonSocket({
+            netSocket: netSocket
+        });
 
         const client = new Client({
             subscriptionIdHex: extraNonce1Hex,

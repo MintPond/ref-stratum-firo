@@ -8,12 +8,11 @@ const
     algorithm = require('./service.algorithm'),
     StratumError = require('./class.StratumError');
 
-
-const MTP_HASH_VALUE_BUFFER = Buffer.alloc(32, 0);
-
-const MTP_VERIFY_FAILED = StratumError.custom('MTP verify failed');
-const INCORRECT_HASH_ROOT_SIZE = StratumError.custom('Incorrect size of MTP hash root');
-const INCORRECT_BLOCK_SIZE = StratumError.custom('Incorrect size of MTP block');
+const NONCE_SIZE = 8;
+const HEADER_HASH_SIZE = 32;
+const MIX_HASH_SIZE = 32;
+const HASH_OUT_BUFFER = Buffer.alloc(32);
+const MIX_HASH_BUFFER = Buffer.alloc(32);
 
 
 class Share {
@@ -26,37 +25,29 @@ class Share {
      * @param args.stratum {Stratum}
      * @param args.workerName {string}
      * @param args.jobIdHex {string}
-     * @param args.extraNonce2Buf {string}
-     * @param args.nTimeBuf {string}
-     * @param args.nonceBuf {string}
-     * @param args.mtpHashRootBuf {Buffer}
-     * @param args.mtpBlockBuf {Buffer}
-     * @param args.mtpProofBuf {Buffer}
+     * @param args.nonceBuf {Buffer}
+     * @param args.headerHashBuf {Buffer}
+     * @param args.mixHashBuf {Buffer}
      */
     constructor(args) {
         precon.notNull(args.client, 'client');
         precon.notNull(args.stratum, 'stratum');
         precon.string(args.workerName, 'workerName');
         precon.string(args.jobIdHex, 'jobIdHex');
-        precon.buffer(args.extraNonce2Buf, 'extraNonce2Buf');
-        precon.buffer(args.nTimeBuf, 'nTimeBuf');
         precon.buffer(args.nonceBuf, 'nonceBuf');
-        precon.buffer(args.mtpHashRootBuf, 'mtpHashRootBuf');
-        precon.buffer(args.mtpBlockBuf, 'mtpBlockBuf');
-        precon.buffer(args.mtpProofBuf, 'mtpProofBuf');
+        precon.buffer(args.headerHashBuf, 'headerHashBuf');
+        precon.buffer(args.mixHashBuf, 'mixHashBuf');
 
         const _ = this;
         _._client = args.client;
         _._stratum = args.stratum;
         _._workerName = args.workerName;
         _._jobIdHex = args.jobIdHex;
-        _._extraNonce2Buf = args.extraNonce2Buf;
-        _._nTimeBuf = args.nTimeBuf;
         _._nonceBuf = args.nonceBuf;
-        _._mtpHashRootBuf = args.mtpHashRootBuf;
-        _._mtpBlockBuf = args.mtpBlockBuf;
-        _._mtpProofBuf = args.mtpProofBuf;
+        _._headerHashBuf = args.headerHashBuf;
+        _._mixHashBuf = args.mixHashBuf;
 
+        _._nonceHex = buffers.leToHex(_._nonceBuf);
         _._stratumDiff = _._client.diff;
         _._shareDiff = 0;
         _._expectedBlocks = 0;
@@ -192,10 +183,16 @@ class Share {
     }
 
     /**
-     * Get share nTime as a Buffer
+     * Get share nonce as a Buffer
      * @returns {Buffer}
      */
-    get nTimeBuf() { return this._nTimeBuf; }
+    get nonceHex() { return this._nonceHex; }
+
+    /**
+     * Get client extraNonce1 as a Buffer
+     * @returns {Buffer}
+     */
+    get extraNonce1Hex() { return this._client.extraNonce1Hex; }
 
     /**
      * Get share nonce as a Buffer
@@ -204,16 +201,16 @@ class Share {
     get nonceBuf() { return this._nonceBuf; }
 
     /**
-     * Get client extraNonce1 as a Buffer
+     * Get header hash
      * @returns {Buffer}
      */
-    get extraNonce1Buf() { return buffers.hexToLE(this._client.extraNonce1Hex); }
+    get headerHashBuf() { return this._headerHashBuf; }
 
     /**
-     * Get share extraNonce2 as a Buffer
+     * Get Mix hash
      * @returns {Buffer}
      */
-    get extraNonce2Buf() { return this._extraNonce2Buf; }
+    get mixHashBuf() { return this._mixHashBuf; }
 
 
     /**
@@ -237,61 +234,48 @@ class Share {
         if (!_._job)
             return _._setError(StratumError.STALE_SHARE);
 
-        // check nonce size
-        if (_._isInvalidNonceSize())
-            return false;
-
-        // check extraNonce2 size
-        if (_._isInvalidExtraNonce2Size())
-            return false;
-
-        // check time size
-        if (_._isInvalidTimeSize())
-            return false;
-
-        // check time range
-        if (_._isInvalidTimeRange())
-            return false;
-
         // check duplicate share
         if (_._isDuplicateShare())
             return false;
 
-        /* check MTP hash root size */
-        if (_._mtpHashRootBuf.length !== algorithm.MTP_HASH_ROOT_SIZE) {
-            _._setError(INCORRECT_HASH_ROOT_SIZE);
-            return true;
-        }
+        // check nonce size
+        if (_._isInvalidNonceSize())
+            return false;
 
-        /* check MTP block size */
-        if (_._mtpBlockBuf.length !== algorithm.MTP_BLOCK_SIZE) {
-            _._setError(INCORRECT_BLOCK_SIZE);
-            return true;
-        }
+        // check nonce prefix
+        if (_._isInvalidNoncePrefix())
+            return false;
 
-        /* Validate MTP proofs */
-        const mtpHeaderBuf = _._serializeMtpHeader();
+        if (_._isInvalidHashHeaderSize())
+            return false;
 
-        const isValidProof = algorithm.verify(
-            /* header    */ mtpHeaderBuf,
-            /* nonce     */ _._nonceBuf,
-            /* hash root */ _._mtpHashRootBuf,
-            /* mtp block */ _._mtpBlockBuf,
-            /* mtp proof */ _._mtpProofBuf,
-            /* hash out  */ MTP_HASH_VALUE_BUFFER);
+        if (_._isInvalidMixHeaderSize())
+            return false;
 
-        if (!isValidProof) {
-            _._setError(MTP_VERIFY_FAILED);
-            return true;
-        }
+        const headerHashBuf = _._job.getHeaderHashBuf(_._client);
+
+        if (_._isHeaderMismatched(headerHashBuf, _._headerHashBuf))
+            return false;
+
+        const isValid = algorithm.verify(
+            /* header hash */ headerHashBuf,
+            /* nonce       */ _._nonceBuf,
+            /* height      */ _._job.height,
+            /* mix hash    */ _._mixHashBuf,
+            /* hash output */ HASH_OUT_BUFFER);
+
+        if (!isValid)
+            return _._setError(StratumError.PROGPOW_VERIFY_FAILED);
 
         // check valid block
-        const header = _._validateBlock(MTP_HASH_VALUE_BUFFER);
+        const hashBi = bi.fromBufferBE(HASH_OUT_BUFFER);
+        _._shareDiff = algorithm.diff1 / Number(hashBi) * algorithm.multiplier;
+        _._isValidBlock = _._job.targetBi >= hashBi;
 
         if (_._isValidBlock) {
 
-            _._blockHex = _._serializeBlock(header).toString('hex');
-            _._blockId = header.hash.toString('hex');
+            _._blockHex = _._serializeBlock().toString('hex');
+            _._blockId = HASH_OUT_BUFFER.toString('hex');
 
             console.log(`Winning nonce submitted: ${_._blockId}`);
         }
@@ -325,6 +309,7 @@ class Share {
             isValidBlock: _.isValidBlock,
             isValidShare: _.isValidShare,
             isBlockAccepted: _.isBlockAccepted,
+            nonceHex: _.nonceHex,
             error: _.error,
             blockHex: _.blockHex,
             blockId: _.blockId,
@@ -341,39 +326,8 @@ class Share {
 
     _isInvalidNonceSize() {
         const _ = this;
-        if (_._nonceBuf.length !== 4) {
+        if (_._nonceBuf.length !== NONCE_SIZE) {
             _._setError(StratumError.INCORRECT_NONCE_SIZE);
-            return true;
-        }
-        return false;
-    }
-
-
-    _isInvalidExtraNonce2Size() {
-        const _ = this;
-        if (_._extraNonce2Buf.length !== 8) {
-            _._setError(StratumError.INCORRECT_EXTRANONCE2_SIZE);
-            return true;
-        }
-        return false;
-    }
-
-
-    _isInvalidTimeSize() {
-        const _ = this;
-        if (_._nTimeBuf.length !== 4) {
-            _._setError(StratumError.INCORRECT_TIME_SIZE);
-            return true;
-        }
-        return false;
-    }
-
-
-    _isInvalidTimeRange() {
-        const _ = this;
-        const nTimeInt = _._nTimeBuf.readUInt32LE(0);
-        if (nTimeInt < _._job.blockTemplate.curtime || nTimeInt > _._submitTime + 7200) {
-            _._setError(StratumError.TIME_OUT_OF_RANGE);
             return true;
         }
         return false;
@@ -384,6 +338,48 @@ class Share {
         const _ = this;
         if (!_._job.registerShare(_)) {
             _._setError(StratumError.DUPLICATE_SHARE);
+            return true;
+        }
+        return false;
+    }
+
+
+    _isInvalidNoncePrefix() {
+        const _ = this;
+        const prefixBuf = buffers.hexToLE(_.client.extraNonce1Hex);
+        const prefix2Buf = _._nonceBuf.slice(-prefixBuf.length);
+        if (Buffer.compare(prefixBuf, prefix2Buf) !== 0) {
+            _._setError(StratumError.INCORRECT_NONCE_PREFIX);
+            return true;
+        }
+        return false;
+    }
+
+
+    _isInvalidHashHeaderSize() {
+        const _ = this;
+        if (_._headerHashBuf.length !== HEADER_HASH_SIZE) {
+            _._setError(StratumError.PROGPOW_INCORRECT_HEADER_HASH_SIZE);
+            return true;
+        }
+        return false;
+    }
+
+
+    _isInvalidMixHeaderSize() {
+        const _ = this;
+        if (_._mixHashBuf.length !== MIX_HASH_SIZE) {
+            _._setError(StratumError.PROGPOW_INCORRECT_MIX_HASH_SIZE);
+            return true;
+        }
+        return false;
+    }
+
+
+    _isHeaderMismatched(headerHashBuf, shareHeaderHashBuf) {
+        const _ = this;
+        if (headerHashBuf.compare(shareHeaderHashBuf) !== 0) {
+            _._setError(StratumError.PROGPOW_HEADER_HASH_MISMATCH);
             return true;
         }
         return false;
@@ -410,119 +406,14 @@ class Share {
     }
 
 
-    _validateBlock(mtpHashValueBuf) {
+    _serializeBlock() {
         const _ = this;
-
-        const headerBi = bi.fromBufferLE(mtpHashValueBuf);
-
-        _._shareDiff = algorithm.diff1 / Number(headerBi) * algorithm.multiplier;
-        _._isValidBlock = _._job.targetBi >= headerBi;
-
-        return _._isValidBlock ? _._serializeHeader(mtpHashValueBuf) : null;
-    }
-
-
-    _serializeHeader(mtpHashValueBuf) {
-        const _ = this;
-
-        const coinbaseBuf = _._job.coinbase.serialize(_);
-        const coinbaseHashBuf = buffers.sha256d(coinbaseBuf);
-
-        const merkleRootBuf = _._job.merkleTree.withFirstHash(coinbaseHashBuf);
-
-        const headerBuf = Buffer.alloc(180);
-        let position = 0;
-
-        /* version    */
-        _._job.versionBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* prev block */
-        _._job.prevHashBuf.copy(headerBuf, position);
-        position += 32;
-
-        /* merkle     */
-        merkleRootBuf.copy(headerBuf, position);
-        position += 32;
-
-        /* time       */
-        _._nTimeBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* bits       */
-        _._job.bitsBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* nonce      */
-        _._nonceBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* MTP version */
-        headerBuf.writeUInt32BE(algorithm.MTP_VERSION, position);
-        position += 4;
-
-        /* MTP hash value */
-        mtpHashValueBuf.copy(headerBuf, position);
-        /* +32 bytes */
-
-        /* +32 bytes - MTP reserved[0] */
-        /* +32 bytes - MTP reserved[1] */
-
-        return {
-            hash: buffers.reverseBytes(buffers.sha256d(headerBuf)),
-            buffer: headerBuf,
-            coinbaseBuf: coinbaseBuf
-        };
-    }
-
-
-    _serializeMtpHeader() {
-
-        const _ = this;
-
-        const coinbaseBuf = _._job.coinbase.serialize(_);
-        const coinbaseHashBuf = buffers.sha256d(coinbaseBuf);
-
-        const merkleRootBuf = _._job.merkleTree.withFirstHash(coinbaseHashBuf);
-
-        const headerBuf = Buffer.alloc(80);
-        let position = 0;
-
-        /* version     */
-        _._job.versionBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* prev block  */
-        _._job.prevHashBuf.copy(headerBuf, position);
-        position += 32;
-
-        /* merkle      */
-        merkleRootBuf.copy(headerBuf, position);
-        position += 32;
-
-        /* time        */
-        _._nTimeBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* bits        */
-        _._job.bitsBuf.copy(headerBuf, position);
-        position += 4;
-
-        /* mtp version */
-        headerBuf.writeUInt32BE(algorithm.MTP_VERSION, position);
-
-        return headerBuf;
-    }
-
-
-    _serializeBlock(header) {
-        const _ = this;
+        const header = _._job.serializeHeader(_);
 
         return Buffer.concat([
             /* header           */ header.buffer,
-            /* mtp hash root    */ _._mtpHashRootBuf,
-            /* mtp block        */ _._mtpBlockBuf,
-            /* mtp proof        */ _._mtpProofBuf,
+            /* nonce            */ _._nonceBuf,
+            /* mix hash         */ buffers.reverseBytes(_._mixHashBuf, MIX_HASH_BUFFER),
             /* transaction len  */ buffers.packVarInt(_._job.blockTemplate.transactions.length + 1/* +coinbase */),
             /* coinbase tx      */ header.coinbaseBuf,
             /* transactions     */ _._job.txDataBuf

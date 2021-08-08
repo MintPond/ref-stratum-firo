@@ -117,7 +117,7 @@ class Stratum extends EventEmitter {
     get jobManager() { return this._jobManager; }
 
     /**
-     * Get the coin daemon RPC client.
+     * Get the coin node RPC client.
      * @returns {null|RpcClient}
      */
     get rpcClient() { return this._rpcClient; }
@@ -218,9 +218,9 @@ class Stratum extends EventEmitter {
 
         if (share.isValidBlock) {
 
-            _._submitBlock(share, (err, result) => {
+            _._submitBlock(share, (err) => {
 
-                if (err || (result && !result.isAccepted)) {
+                if (err) {
                     _._emitShare(share);
                     return;
                 }
@@ -228,7 +228,7 @@ class Stratum extends EventEmitter {
                 _.jobManager.updateJob(() => {
                     _._checkBlockAccepted(share, (err, result) => {
 
-                        if (err || (result && !result.isAccepted)) {
+                        if (err || !result.isAccepted) {
                             share.isValidBlock = false
                         }
                         else {
@@ -278,12 +278,12 @@ class Stratum extends EventEmitter {
             params: [share.blockHex],
             callback: (err, result) => {
                 if (err) {
-                    console.error(`Error while submitting block to daemon: ${JSON.stringify(err)}`);
+                    console.error(`Error while submitting block to node: ${JSON.stringify(err)}`);
                 }
-                else if (result && !result.isAccepted) {
-                    console.error(`Daemon rejected a supposedly valid block: ${JSON.stringify(result)}`)
+                else if (result) {
+                    console.error(`Node rejected a supposedly valid block: ${JSON.stringify(result)}`)
                 }
-                callback(err, result);
+                callback(err || result);
             }
         });
     }

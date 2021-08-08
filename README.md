@@ -4,18 +4,18 @@ ref-stratum-firo
 This Reference Stratum is a simple implementation used as a basis for testing, experimentation, and 
 demonstration purposes. It is not intended for production use.
 
-This project has been developed and tested on [Node v10.17](https://nodejs.org/) and [Ubuntu 16.04](http://releases.ubuntu.com/16.04/)
+This project has been developed and tested on [Node v12](https://nodejs.org/) and [Ubuntu 16.04](http://releases.ubuntu.com/16.04/)
 
 ## Install ##
 
-__NodeJS v10 (Ubuntu)__
+__NodeJS v12 (Ubuntu)__
 ```bash
 # Optional: uninstall current version
 sudo apt-get remove node
 sudo apt-get remove nodejs
 
-# Install version 10.x
-curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+# Install version 12.x
+curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
 sudo apt-get install nodejs -y
 ```
 
@@ -34,17 +34,12 @@ __Download from Github__
 ```bash
 git clone https://github.com/MintPond/ref-stratum-firo
 
-# install
 cd ref-stratum-firo
-npm install
-```
 
-__Install in a Project__
-```bash
 npm config set @mintpond:registry https://npm.pkg.github.com/mintpond
 npm config set //npm.pkg.github.com/:_authToken <PERSONAL_ACCESS_TOKEN>
 
-npm install @mintpond/ref-stratum-firo --save
+npm install
 ```
 
 ## Usage ##
@@ -106,8 +101,7 @@ running it.
 - [ClientWriter](libs/class.ClientWriter.js) - Handles sending messages to a client.
 - [Coinbase](libs/class.Coinbase.js) - Creates coinbase transaction and includes founder rewards.
 - [Share](libs/class.Share.js) - Processes shares, validates proofs, creates blocks.
-- [Socket](libs/class.Socket.js) - Handles binary BOS serialization and deserialization.
-- [algorithm](libs/service.algorithm.js) - Contains MTP constants and hash verification.
+- [algorithm](libs/service.algorithm.js) - Contains progpow constants and hash verification.
 
 
 ## Resources ##

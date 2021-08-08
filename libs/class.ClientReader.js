@@ -7,6 +7,8 @@ const
     Share = require('./class.Share'),
     StratumError = require('./class.StratumError');
 
+const EMPTY_BUFFER = Buffer.alloc(0);
+
 
 class ClientReader {
 
@@ -34,6 +36,8 @@ class ClientReader {
         precon.notNull(message, 'message');
 
         const _ = this;
+
+        console.log(message);
 
         if (_._client.isSubscribed && _._client.isAuthorized) {
             return _._handleAuthSubbed(message);
@@ -184,65 +188,29 @@ class ClientReader {
         }
 
         if (!Array.isArray(message.params)) {
-            _._client.disconnect('Malformed message: params is not an array');
+            _._client.emit(Client.EVENT_MALFORMED_MESSAGE, { message: message });
             return true/*isHandled*/;
         }
 
         const workerName = message.params[0];
-        const jobIdBuf = message.params[1];
-        const extraNonce2Buf = message.params[2];
-        const nTimeBuf = message.params[3];
-        const nonceBuf = message.params[4];
-        const mtpHashRootBuf = message.params[5];
-        const mtpBlockBuf = message.params[6];
-        const mtpProofBuf = message.params[7];
-
-        if (!Buffer.isBuffer(jobIdBuf)) {
-            _._client.disconnect('Malformed message: jobIdBuf is not a Buffer');
+        if (!workerName || !mu.isString(workerName)) {
+            _._client.emit(Client.EVENT_MALFORMED_MESSAGE, { message: message });
             return true/*isHandled*/;
         }
 
-        if (!Buffer.isBuffer(extraNonce2Buf)) {
-            _._client.disconnect('Malformed message: extraNonce2Buf is not a Buffer');
-            return true/*isHandled*/;
-        }
-
-        if (!Buffer.isBuffer(nTimeBuf)) {
-            _._client.disconnect('Malformed message: nTimeBuf is not a Buffer');
-            return true/*isHandled*/;
-        }
-
-        if (!Buffer.isBuffer(nonceBuf)) {
-            _._client.disconnect('Malformed message: nonceBuf is not a Buffer');
-            return true/*isHandled*/;
-        }
-
-        if (!Buffer.isBuffer(mtpHashRootBuf)) {
-            _._client.disconnect('Malformed message: mtpHashRootBuf is not a Buffer');
-            return true/*isHandled*/;
-        }
-
-        if (!Buffer.isBuffer(mtpBlockBuf)) {
-            _._client.disconnect('Malformed message: mtpBlockBuf is not a Buffer');
-            return true/*isHandled*/;
-        }
-
-        if (!Buffer.isBuffer(mtpProofBuf)) {
-            _._client.disconnect('Malformed message: mtpProofBuf is not a Buffer');
-            return true/*isHandled*/;
-        }
+        const jobIdHex = _._hex(message.params[1]);
+        const nonceBuf = _._toBufferLE(message.params[2]);
+        const headerHashBuf = _._toBuffer(message.params[3]);
+        const mixHashBuf = _._toBuffer(message.params[4]);
 
         const share = new Share({
             client: _._client,
             stratum: _._stratum,
             workerName: workerName,
-            jobIdHex: buffers.leToHex(jobIdBuf),
-            extraNonce2Buf: extraNonce2Buf,
-            nTimeBuf: nTimeBuf,
+            jobIdHex: jobIdHex,
             nonceBuf: nonceBuf,
-            mtpHashRootBuf: mtpHashRootBuf,
-            mtpBlockBuf: mtpBlockBuf,
-            mtpProofBuf: mtpProofBuf
+            headerHashBuf: headerHashBuf,
+            mixHashBuf: mixHashBuf
         });
 
         const isValid = share.validate();
@@ -256,6 +224,83 @@ class ClientReader {
         });
 
         return true/*isHandled*/;
+    }
+
+
+    _hex(val) {
+
+        let value;
+
+        if (mu.isString(val)) {
+
+            if (val.startsWith('0x'))
+                val = val.substr(2);
+
+            value = val.toLowerCase();
+        }
+        else {
+            value = '';
+        }
+
+        return value;
+    }
+
+
+    _toBufferLE(val) {
+
+        let value;
+
+        if (Buffer.isBuffer(val)) {
+            // conversion not needed
+            value = val;
+        }
+        else if (mu.isString(val)) {
+
+            if (val.startsWith('0x'))
+                val = val.substr(2);
+
+            try {
+                // convert hex to LE bytes
+                value = buffers.hexToLE(val);
+            }
+            catch (err) {
+                value = EMPTY_BUFFER;
+            }
+        }
+        else {
+            value = EMPTY_BUFFER;
+        }
+
+        return value;
+    }
+
+
+    _toBuffer(val) {
+
+        let value;
+
+        if (Buffer.isBuffer(val)) {
+            // conversion not needed
+            value = val;
+        }
+        else if (mu.isString(val)) {
+
+            if (val.startsWith('0x'))
+                val = val.substr(2);
+
+            try {
+                // convert hex directly to bytes
+                value = Buffer.from(val, 'hex');
+            }
+            catch (err) {
+                value = EMPTY_BUFFER;
+            }
+        }
+        else {
+            value = EMPTY_BUFFER;
+        }
+
+        return value;
     }
 }
 

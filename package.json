@@ -6,12 +6,14 @@
   "author": "JCThePants",
   "license": "MIT",
   "dependencies": {
-    "@mintpond/hasher-mtp": "^2.0.0",
+    "@mintpond/hasher-firopow": "^0.1.0",
     "@mintpond/mint-bos": "^2.0.1",
     "@mintpond/mint-bitcoin-script": "^1.0.1",
     "@mintpond/mint-merkle": "^1.0.0",
     "@mintpond/mint-precon": "^1.0.0",
-    "@mintpond/mint-utils": "^2.0.0"
+    "@mintpond/mint-socket": "^1.0.0",
+    "@mintpond/mint-utils": "^2.0.0",
+    "sha3": "2.1.2"
   },
   "homepage": "https://github.com/MintPond/ref-stratum-firo",
   "bugs": {

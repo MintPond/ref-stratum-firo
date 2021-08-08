@@ -2,11 +2,10 @@
 
 const
     precon = require('@mintpond/mint-precon'),
-    mu = require('@mintpond/mint-utils'),
     buffers = require('@mintpond/mint-utils').buffers,
-    algorithm = require('./service.algorithm'),
     Job = require('./class.Job'),
-    StratumError = require('./class.StratumError');
+    StratumError = require('./class.StratumError'),
+    algorithm = require('./service.algorithm');
 
 
 class ClientWriter {
@@ -27,14 +26,6 @@ class ClientWriter {
     }
 
 
-    /**
-     * Reply to a message.
-     *
-     * @param args
-     * @param args.replyId {number}
-     * @param [args.result] {boolean}
-     * @param [args.error] {StratumError}
-     */
     reply(args) {
         precon.integer(args.replyId, 'replyId');
         precon.opt_boolean(args.result, 'result');
@@ -54,12 +45,6 @@ class ClientWriter {
     }
 
 
-    /**
-     * Reply to a mining.subscribe message.
-     *
-     * @param args
-     * @param args.replyId {number}
-     */
     replySubscribe(args) {
         precon.integer(args.replyId, 'replyId');
 
@@ -71,24 +56,16 @@ class ClientWriter {
 
         _._socket.send({
             id: replyId,
-            result: [buffers.hexToLE(subscriptionIdHex), buffers.hexToLE(extraNonce1Hex)],
+            result: [subscriptionIdHex, extraNonce1Hex],
             error: null
         });
     }
 
 
-    /**
-     * Send a mining.notify message.
-     *
-     * @param args
-     * @param args.job {Job}
-     * @param args.cleanJobs {boolean}
-     * @param args.diff {number}
-     */
     miningNotify(args) {
         precon.instanceOf(args.job, Job, 'job');
         precon.boolean(args.cleanJobs, 'cleanJobs');
-        precon.opt_positiveNumber(args.diff, 'diff');
+        precon.positiveNumber(args.diff, 'diff');
 
         const _ = this;
 
@@ -96,33 +73,25 @@ class ClientWriter {
         const cleanJobs = args.cleanJobs;
         const diff = args.diff;
 
-        if (mu.isNumber(diff)) {
+        const nDiff = diff / algorithm.multiplier;
+        const targetBuf = buffers.packUInt256LE(algorithm.diff1 / nDiff);
 
-            const nDiff = diff / algorithm.multiplier;
-            const targetBuf = buffers.packUInt256LE(algorithm.diff1 / nDiff);
-
-            _._socket.send({
-                id: null,
-                method: 'mining.set_target',
-                params: [targetBuf]
-            });
-        }
-
-        _._socket.send({
+        const m = {
             id: null,
             method: 'mining.notify',
             params: [
-                /* 0 Job Id        */ buffers.hexToLE(job.idHex),
-                /* 1 prevhash      */ buffers.hexToLE(job.prevBlockId),
-                /* 2 coinb1        */ job.coinbase.coinbase1Buf,
-                /* 3 coinb2        */ job.coinbase.coinbase2Buf,
-                /* 4 merkle_branch */ job.merkleTree.branchBufArr,
-                /* 5 version       */ job.versionBuf,
-                /* 6 nbits (diff)  */ job.bitsBuf,
-                /* 7 ntime         */ job.curTimeBuf,
-                /* 8 clean_jobs    */ cleanJobs
+                /* 0 Job Id        */ job.idHex,
+                /* 1 header hash   */ job.getHeaderHashBuf(_._client).toString('hex'),
+                /* 2 seed hash     */ job.seedHashBuf.toString('hex'),
+                /* 3 share target  */ buffers.leToHex(targetBuf),
+                /* 4 clean_jobs    */ cleanJobs,
+                /* 5 block height  */ job.height,
+                /* 6 nbits (diff)  */ buffers.leToHex(job.bitsBuf)
             ]
-        });
+        };
+
+        console.log(m);
+        _._socket.send(m);
     }
 }
 

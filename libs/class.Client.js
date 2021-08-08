@@ -6,11 +6,10 @@ const
     mu = require('@mintpond/mint-utils'),
     ClientWriter = require('./class.ClientWriter'),
     ClientReader = require('./class.ClientReader'),
-    Socket = require('./class.Socket'),
+    TcpSocket = require('@mintpond/mint-socket').TcpSocket,
     Job = require('./class.Job');
 
 const TIMEOUT = 600;
-const EXTRANONCE2_SIZE = 4;
 
 
 class Client extends EventEmitter {
@@ -22,14 +21,14 @@ class Client extends EventEmitter {
      * @param args.subscriptionIdHex {string}
      * @param args.extraNonce1Hex {string}
      * @param args.stratum {Stratum}
-     * @param args.socket {Socket}
+     * @param args.socket {TcpSocket}
      * @param args.port {{number:number, diff:number}}
      */
     constructor(args) {
         precon.string(args.subscriptionIdHex, 'subscriptionIdHex');
         precon.string(args.extraNonce1Hex, 'extraNonce1Hex');
         precon.notNull(args.stratum, 'stratum');
-        precon.instanceOf(args.socket, Socket, 'socket');
+        precon.instanceOf(args.socket, TcpSocket, 'socket');
         precon.notNull(args.port, 'port');
 
         super();
@@ -58,11 +57,10 @@ class Client extends EventEmitter {
         _._isAuthorized = false;
         _._disconnectReason = '';
 
-
-        _._socket.on(Socket.EVENT_MESSAGE_IN, _._onSocketMessageIn.bind(_));
-        _._socket.on(Socket.EVENT_MALFORMED_MESSAGE, _._onMalformedMessage.bind(_));
-        _._socket.on(Socket.EVENT_DISCONNECT, _._onDisconnect.bind(_));
-        _._socket.on(Socket.EVENT_ERROR, _._onSocketError.bind(_));
+        _._socket.on(TcpSocket.EVENT_MESSAGE_IN, _._onSocketMessageIn.bind(_));
+        _._socket.on(TcpSocket.EVENT_MALFORMED_MESSAGE, _._onMalformedMessage.bind(_));
+        _._socket.on(TcpSocket.EVENT_DISCONNECT, _._onDisconnect.bind(_));
+        _._socket.on(TcpSocket.EVENT_ERROR, _._onSocketError.bind(_));
     }
 
 
@@ -122,14 +120,8 @@ class Client extends EventEmitter {
     get extraNonce1Hex() { return this._extraNonce1Hex; }
 
     /**
-     * Get the clients assigned extraNonce2 size.
-     * @returns {number}
-     */
-    get extraNonce2Size() { return EXTRANONCE2_SIZE; }
-
-    /**
      * Get the client socket.
-     * @returns {Socket}
+     * @returns {TcpSocket}
      */
     get socket() { return this._socket; }
 

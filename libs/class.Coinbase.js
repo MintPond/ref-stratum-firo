@@ -59,21 +59,20 @@ class Coinbase {
 
 
     /**
-     * Use information from a share to serialize coinbase.
+     * Use information from a client to serialize coinbase.
      *
-     * @param share {Share}
+     * @param client {Client}
      * @returns {Buffer}
      */
-    serialize(share) {
-        precon.instanceOf(share, Share, 'share');
+    serialize(client) {
+        precon.notNull(client, 'client');
 
         const _ = this;
         const coinbase1Buf = _.coinbase1Buf;
         const coinbase2Buf = _.coinbase2Buf;
         return Buffer.concat([
             coinbase1Buf,
-            share.extraNonce1Buf,
-            share.extraNonce2Buf,
+            Buffer.from(client.extraNonce1Hex),
             coinbase2Buf
         ]);
     }

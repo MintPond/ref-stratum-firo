@@ -8,13 +8,13 @@ const stratum = new Stratum({
     host: "0.0.0.0",
     port: {
         number: 3000,
-        diff: 512
+        diff: 10
     },
     rpc: {
-        host: '172.16.3.102',
-        port: 17001,
+        host: '127.0.0.1',
+        port: 8382,
         user: 'rpcuser',
-        password: "x"
+        password: 'x'
     },
     jobUpdateInterval: 55,
     blockPollIntervalMs: 250
