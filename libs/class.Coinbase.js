@@ -8,7 +8,7 @@ const
     Share = require('./class.Share');
 
 const
-    EXTRANONCE_SIZE = 16,
+    EXTRANONCE_SIZE = 4,
     BUFFER_U32_ZERO = buffers.packUInt32LE(0),
     BUFFER_VAR_ONE = buffers.packVarInt(1),
     BUFFER_32_MAX = Buffer.from('FFFFFFFF', 'hex'),
