@@ -72,7 +72,7 @@ class Coinbase {
         const coinbase2Buf = _.coinbase2Buf;
         return Buffer.concat([
             coinbase1Buf,
-            Buffer.from(client.extraNonce1Hex),
+            Buffer.from(client.extraNonce1Hex, 'hex'),
             coinbase2Buf
         ]);
     }
