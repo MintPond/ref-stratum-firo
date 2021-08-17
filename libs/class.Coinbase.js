@@ -220,6 +220,10 @@ class Coinbase {
     _getExtraPayloadBuf() {
 
         const _ = this;
+
+        if (!_._blockTemplate.coinbase_payload)
+            return Buffer.alloc(1, 0);
+
         const payload = Buffer.from(_._blockTemplate.coinbase_payload, 'hex');
         const cbPayload = Buffer.alloc(1 + payload.length);
 
