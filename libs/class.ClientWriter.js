@@ -81,7 +81,7 @@ class ClientWriter {
             method: 'mining.notify',
             params: [
                 /* 0 Job Id        */ job.idHex,
-                /* 1 header hash   */ job.getHeaderHashBuf(_._client).toString('hex'),
+                /* 1 progpow hash  */ job.getProgPowHashBuf(_._client).toString('hex'),
                 /* 2 seed hash     */ job.seedHashBuf.toString('hex'),
                 /* 3 share target  */ buffers.leToHex(targetBuf),
                 /* 4 clean_jobs    */ cleanJobs,

@@ -9,7 +9,7 @@ const
     StratumError = require('./class.StratumError');
 
 const NONCE_SIZE = 8;
-const HEADER_HASH_SIZE = 32;
+const PROGPOW_HASH_SIZE = 32;
 const MIX_HASH_SIZE = 32;
 const HASH_OUT_BUFFER = Buffer.alloc(32);
 const MIX_HASH_BUFFER = Buffer.alloc(32);
@@ -26,7 +26,7 @@ class Share {
      * @param args.workerName {string}
      * @param args.jobIdHex {string}
      * @param args.nonceBuf {Buffer}
-     * @param args.headerHashBuf {Buffer}
+     * @param args.progpowHashBuf {Buffer}
      * @param args.mixHashBuf {Buffer}
      */
     constructor(args) {
@@ -35,7 +35,7 @@ class Share {
         precon.string(args.workerName, 'workerName');
         precon.string(args.jobIdHex, 'jobIdHex');
         precon.buffer(args.nonceBuf, 'nonceBuf');
-        precon.buffer(args.headerHashBuf, 'headerHashBuf');
+        precon.buffer(args.progpowHashBuf, 'progpowHashBuf');
         precon.buffer(args.mixHashBuf, 'mixHashBuf');
 
         const _ = this;
@@ -44,7 +44,7 @@ class Share {
         _._workerName = args.workerName;
         _._jobIdHex = args.jobIdHex;
         _._nonceBuf = args.nonceBuf;
-        _._headerHashBuf = args.headerHashBuf;
+        _._progpowHashBuf = args.progpowHashBuf;
         _._mixHashBuf = args.mixHashBuf;
 
         _._nonceHex = buffers.leToHex(_._nonceBuf);
@@ -204,7 +204,7 @@ class Share {
      * Get header hash
      * @returns {Buffer}
      */
-    get headerHashBuf() { return this._headerHashBuf; }
+    get progpowHashBuf() { return this._progpowHashBuf; }
 
     /**
      * Get Mix hash
@@ -252,17 +252,17 @@ class Share {
         if (_._isInvalidMixHeaderSize())
             return false;
 
-        const headerHashBuf = _._job.getHeaderHashBuf(_._client);
+        const progpowHashBuf = _._job.getProgPowHashBuf(_._client);
 
-        if (_._isHeaderMismatched(headerHashBuf, _._headerHashBuf))
+        if (_._isHeaderMismatched(progpowHashBuf, _._progpowHashBuf))
             return false;
 
         const isValid = algorithm.verify(
-            /* header hash */ headerHashBuf,
-            /* nonce       */ _._nonceBuf,
-            /* height      */ _._job.height,
-            /* mix hash    */ _._mixHashBuf,
-            /* hash output */ HASH_OUT_BUFFER);
+            /* progpow hash */ progpowHashBuf,
+            /* nonce        */ _._nonceBuf,
+            /* height       */ _._job.height,
+            /* mix hash     */ _._mixHashBuf,
+            /* hash output  */ HASH_OUT_BUFFER);
 
         if (!isValid)
             return _._setError(StratumError.PROGPOW_VERIFY_FAILED);
@@ -275,7 +275,7 @@ class Share {
         if (_._isValidBlock) {
 
             _._blockHex = _._serializeBlock().toString('hex');
-            _._blockId = HASH_OUT_BUFFER.toString('hex');
+            _._blockId = _._job.getHeaderHashBuf(_).toString('hex');
 
             console.log(`Winning nonce submitted: ${_._blockId}`);
         }
@@ -358,7 +358,7 @@ class Share {
 
     _isInvalidHashHeaderSize() {
         const _ = this;
-        if (_._headerHashBuf.length !== HEADER_HASH_SIZE) {
+        if (_._progpowHashBuf.length !== PROGPOW_HASH_SIZE) {
             _._setError(StratumError.PROGPOW_INCORRECT_HEADER_HASH_SIZE);
             return true;
         }

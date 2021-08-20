@@ -12,6 +12,7 @@ const
     Share = require('./class.Share');
 
 const BLOCK_HEIGHT_BUFFER = Buffer.alloc(4);
+const MIX_HASH_BUFFER = Buffer.alloc(32);
 
 
 class Job {
@@ -67,16 +68,16 @@ class Job {
 
         _._epochNumber = _._getEpochNumber(_._height);
         _._seedHashBuf = _._createSeedHashBuf();
-        _._headerTemplateBuf = Buffer.alloc(80);
+        _._ppHeaderTemplateBuf = Buffer.alloc(80);
 
         let position = 0;
 
         /* version    */
-        _.versionBuf.copy(_._headerTemplateBuf, position);
+        _.versionBuf.copy(_._ppHeaderTemplateBuf, position);
         position += 4;
 
         /* prev block   */
-        _.prevHashBuf.copy(_._headerTemplateBuf, position);
+        _.prevHashBuf.copy(_._ppHeaderTemplateBuf, position);
         position += 32;
 
         /* merkle       */
@@ -84,16 +85,16 @@ class Job {
         position += 32;
 
         /* time         */
-        _.curTimeBuf.copy(_._headerTemplateBuf, position);
+        _.curTimeBuf.copy(_._ppHeaderTemplateBuf, position);
         position += 4;
 
         /* bits         */
-        _.bitsBuf.copy(_._headerTemplateBuf, position);
+        _.bitsBuf.copy(_._ppHeaderTemplateBuf, position);
         position += 4;
 
         /* block height */
         BLOCK_HEIGHT_BUFFER.writeUInt32LE(_.height, 0);
-        BLOCK_HEIGHT_BUFFER.copy(_._headerTemplateBuf, position);
+        BLOCK_HEIGHT_BUFFER.copy(_._ppHeaderTemplateBuf, position);
     }
 
 
@@ -249,12 +250,12 @@ class Job {
 
 
     /**
-     * Get hash of block header.
+     * Get header hash used for ProgPow.
      *
      * @param client {Client}
      * @returns {Buffer}
      */
-    getHeaderHashBuf(client) {
+    getProgPowHashBuf(client) {
         precon.notNull(client, 'client');
 
         const _ = this;
@@ -262,9 +263,35 @@ class Job {
         const coinbaseHashBuf = buffers.sha256d(coinbaseBuf);
         const merkleRootBuf = _.merkleTree.withFirstHash(coinbaseHashBuf);
 
-        merkleRootBuf.copy(_._headerTemplateBuf, 36);
+        merkleRootBuf.copy(_._ppHeaderTemplateBuf, 36);
 
-        return buffers.reverseBytes(buffers.sha256d(_._headerTemplateBuf));
+        return buffers.reverseBytes(buffers.sha256d(_._ppHeaderTemplateBuf));
+    }
+
+
+    /**
+     * Get header hash used for block ID.
+     *
+     * @param share {Share}
+     * @returns {Buffer}
+     */
+    getHeaderHashBuf(share) {
+        precon.instanceOf(share, Share, 'share');
+
+        const _ = this;
+        const coinbaseBuf = _.coinbase.serialize(share.client);
+        const coinbaseHashBuf = buffers.sha256d(coinbaseBuf);
+        const merkleRootBuf = _.merkleTree.withFirstHash(coinbaseHashBuf);
+
+        const headerBuf = Buffer.alloc(120);
+
+        _._ppHeaderTemplateBuf.copy(headerBuf);
+
+        merkleRootBuf.copy(headerBuf, 36);
+        share.nonceBuf.copy(headerBuf, 80);
+        buffers.reverseBytes(share.mixHashBuf, MIX_HASH_BUFFER).copy(headerBuf, 88);
+
+        return buffers.reverseBytes(buffers.sha256d(headerBuf));
     }
 
 
@@ -284,7 +311,7 @@ class Job {
         const merkleRootBuf = _.merkleTree.withFirstHash(coinbaseHashBuf);
 
         const headerBuf = Buffer.alloc(80);
-        _._headerTemplateBuf.copy(headerBuf);
+        _._ppHeaderTemplateBuf.copy(headerBuf);
 
         merkleRootBuf.copy(headerBuf, 36);
 

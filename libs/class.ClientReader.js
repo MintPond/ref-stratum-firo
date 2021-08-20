@@ -200,7 +200,7 @@ class ClientReader {
 
         const jobIdHex = _._hex(message.params[1]);
         const nonceBuf = _._toBufferLE(message.params[2]);
-        const headerHashBuf = _._toBuffer(message.params[3]);
+        const progpowHashBuf = _._toBuffer(message.params[3]);
         const mixHashBuf = _._toBuffer(message.params[4]);
 
         const share = new Share({
@@ -209,7 +209,7 @@ class ClientReader {
             workerName: workerName,
             jobIdHex: jobIdHex,
             nonceBuf: nonceBuf,
-            headerHashBuf: headerHashBuf,
+            progpowHashBuf: progpowHashBuf,
             mixHashBuf: mixHashBuf
         });
 
