@@ -337,7 +337,8 @@ class Job {
         return new Coinbase({
             coinbaseAddress: _._stratum.config.coinbaseAddress,
             blockTemplate: _._blockTemplate,
-            blockBrand: _._stratum.config.blockBrand
+            blockBrand: _._stratum.config.blockBrand,
+            chainParams: _._stratum.config.chainParams
         });
     }
 

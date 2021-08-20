@@ -7,7 +7,8 @@ const
     Server = require('./class.Server'),
     Client = require('./class.Client'),
     Share = require('./class.Share'),
-    JobManager = require('./class.JobManager');
+    JobManager = require('./class.JobManager'),
+    ChainParams = require('./const.ChainParams');
 
 
 class Stratum extends EventEmitter {
@@ -23,6 +24,12 @@ class Stratum extends EventEmitter {
 
         const _ = this;
         _._config = config;
+
+        if (!config.chainParams) {
+            config.chainParams = config.coinbaseAddress[0] === 'T'
+                ? ChainParams.TESTNET
+                : ChainParams.MAIN;
+        }
 
         _._isInit = false;
         _._server = null;

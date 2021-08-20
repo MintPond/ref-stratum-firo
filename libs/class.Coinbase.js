@@ -24,16 +24,19 @@ class Coinbase {
      * @param args
      * @param args.coinbaseAddress {string}
      * @param args.blockTemplate {object}
+     * @param args.chainParams {object}
      * @param [args.blockBrand] {string}
      */
     constructor(args) {
         precon.string(args.coinbaseAddress, 'coinbaseAddress');
         precon.notNull(args.blockTemplate, 'blockTemplate');
+        precon.notNull(args.chainParams, 'chainParams');
         precon.opt_string(args.blockBrand, 'blockBrand');
 
         const _ = this;
         _._coinbaseAddress = args.coinbaseAddress;
         _._blockTemplate = args.blockTemplate;
+        _._chainParams = args.chainParams;
         _._blockBrand = args.blockBrand || '/@mintpond/ref-stratum/'
 
         _._coinbase1 = null;
@@ -133,21 +136,21 @@ class Coinbase {
         const outputsArr = [];
         const blockTemplate = _._blockTemplate;
         const poolAddressScript = scripts.makeAddressScript(_._coinbaseAddress)
-        const isTestnet = _._coinbaseAddress[0] === 'T';
+        const isTestnet = _._chainParams.isTestnet;
 
         let poolRewardSt = blockTemplate.coinbasevalue;
 
         _._outputCount = 0;
 
-        const firstHalvingHeight = isTestnet ? 12000 : 302438;
+        if (blockTemplate.height < _._chainParams.nSubsidyHalvingFirst) {
 
-        if (blockTemplate.height < firstHalvingHeight) {
+            const coin = _._chainParams.COIN;
 
-            const founder1RewardSt = 50000000;
-            const founder2RewardSt = 50000000;
-            const founder3RewardSt = 50000000;
-            const founder4RewardSt = 150000000;
-            const founder5RewardSt = 50000000;
+            const founder1RewardSt = 1 * coin;
+            const founder2RewardSt = 1 * coin;
+            const founder3RewardSt = 1 * coin;
+            const founder4RewardSt = 3 * coin;
+            const founder5RewardSt = 1 * coin;
 
             const founder1Script = scripts.makeAddressScript(
                 isTestnet ? 'TDk19wPKYq91i18qmY6U9FeTdTxwPeSveo' : 'aCAgTPgtYcA4EysU4UKC86EQd5cTtHtCcr');

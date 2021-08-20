@@ -1,8 +1,11 @@
 'use strict';
 
-const Stratum = require('./libs/class.Stratum');
+const
+    Stratum = require('./libs/class.Stratum'),
+    ChainParams = require('./libs/const.ChainParams');
 
 const stratum = new Stratum({
+    chainParams: ChainParams.REGTEST, // ChainParams.Main ChainParams.TESTNET
     coinbaseAddress: 'TC6qME2GhepR7656DgsR72pkQDmhfTDbtV',
     blockBrand: '/@mintpond/ref-stratum/',
     host: "0.0.0.0",
@@ -12,7 +15,7 @@ const stratum = new Stratum({
     },
     rpc: {
         host: '127.0.0.1',
-        port: 8382,
+        port: 8888,
         user: 'rpcuser',
         password: 'x'
     },
