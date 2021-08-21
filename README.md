@@ -21,7 +21,7 @@ sudo apt-get install nodejs -y
 
 __Dependencies__
 ```bash
-# (ubuntu) build essentials required to compile MTP verification
+# (ubuntu) build essentials required to compile progpow verification
 sudo apt-get install build-essentials
 
 # Dependencies may require that you have a Github personal access token to install.
