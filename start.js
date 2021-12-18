@@ -5,7 +5,7 @@ const
     ChainParams = require('./libs/const.ChainParams');
 
 const stratum = new Stratum({
-    chainParams: ChainParams.REGTEST, // ChainParams.Main ChainParams.TESTNET
+    chainParams: ChainParams.REGTEST, // Use ChainParams.MAIN for main net, ChainParams.TESTNET for testnet
     coinbaseAddress: 'TC6qME2GhepR7656DgsR72pkQDmhfTDbtV',
     blockBrand: '/@mintpond/ref-stratum/',
     host: "0.0.0.0",
