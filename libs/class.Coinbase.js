@@ -142,7 +142,22 @@ class Coinbase {
 
         _._outputCount = 0;
 
-        if (blockTemplate.height < _._chainParams.nSubsidyHalvingFirst) {
+        const time = mu.now(); // epoch time in seconds
+
+        if (time >= _._chainParams.stage3StartTime) {
+
+            const coin = _._chainParams.COIN;
+
+            const devFundSt = _._chainParams.stage3DevelopmentFund * coin;
+            const commFundSt = _._chainParams.stage3CommunityFund * coin;
+
+            const devFundScript = scripts.makeAddressScript(_._chainParams.stage3DevelopmentFundAddress);
+            const commFundScript = scripts.makeAddressScript(_._chainParams.stage3CommunityFundAddress);
+
+            _._addOutput(outputsArr, devFundSt, devFundScript);
+            _._addOutput(outputsArr, commFundSt, commFundScript);
+        }
+        else if (blockTemplate.height < _._chainParams.nSubsidyHalvingFirst) {
 
             const coin = _._chainParams.COIN;
 
