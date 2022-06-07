@@ -1,6 +1,6 @@
 {
   "name": "@mintpond/ref-stratum-firo",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Firo reference stratum for testing, experimentation, and demonstration.",
   "main": "index.js",
   "author": "JCThePants",
